@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vulnerability Prioritization Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        /* Collapsible Upload Section */
+        .upload-section {
+            background: #f9f9f9;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .upload-header {
+            background: #007bff;
+            color: white;
+            padding: 12px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            transition: background 0.3s;
+        }
+
+        .upload-header:hover {
+            background: #0056b3;
+        }
+
+        .upload-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .collapse-icon {
+            font-size: 20px;
+            transition: transform 0.3s;
+        }
+
+        .collapse-icon.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .upload-content {
+            padding: 25px;
+            text-align: center;
+            max-height: 200px;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+
+        .upload-content.collapsed {
+            max-height: 0;
+            padding: 0 25px;
+        }
+
+        .upload-section input[type="file"] {
+            display: none;
+        }
+
+        .upload-button {
+            background: #28a745;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+            display: inline-block;
+        }
+
+        .upload-button:hover {
+            background: #218838;
+        }
+
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 12px 30px;
+            cursor: pointer;
+            background: #f5f5f5;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-size: 16px;
+            transition: all 0.3s;
+            color: #666;
+        }
+
+        .tab:hover {
+            background: #e9e9e9;
+        }
+
+        .tab.active {
+            background: white;
+            border-bottom: 3px solid #007bff;
+            color: #007bff;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-card.critical {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .stat-card.high {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .stat-card.medium {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        /* Enhanced scrollable tables */
+        .table-container {
+            overflow-x: auto;
+            overflow-y: auto;
+            max-height: 600px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            min-width: 900px;
+        }
+
+        th {
+            background: #f5f5f5;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #ddd;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        .risk-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .risk-CRITICAL {
+            background: #fee;
+            color: #c00;
+        }
+
+        .risk-HIGH {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .risk-MEDIUM {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .risk-LOW {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .risk-MINIMAL {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+
+        .cve-link {
+            color: #007bff;
+            text-decoration: none;
+        }
+
+        .cve-link:hover {
+            text-decoration: underline;
+        }
+
+        .asset-list {
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .cve-list {
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .asset-row {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .asset-row:hover {
+            background: #e3f2fd !important;
+            transform: scale(1.01);
+        }
+
+        .asset-row:active {
+            transform: scale(0.99);
+        }
+
+        /* Modal for asset details */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 3% auto;
+            padding: 0;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 1200px;
+            max-height: 85vh;
+            overflow: hidden;
+            box-shadow: 0 5px 30px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 10px 10px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 24px;
+            margin: 0;
+        }
+
+        .modal-close {
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.3s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .modal-body {
+            padding: 30px;
+            overflow-y: auto;
+            max-height: calc(85vh - 180px);
+        }
+
+        .asset-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .asset-info-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+
+        .asset-info-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .asset-info-value {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .sortable:hover {
+            background: #e9e9e9;
+        }
+
+        .sort-icon {
+            margin-left: 5px;
+            color: #999;
+        }
+
+        .asset-score-bar {
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .asset-score-fill {
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .score-critical {
+            background: linear-gradient(90deg, #f5576c, #c00);
+        }
+
+        .score-high {
+            background: linear-gradient(90deg, #fee140, #fa709a);
+        }
+
+        .score-medium {
+            background: linear-gradient(90deg, #4facfe, #00f2fe);
+        }
+
+        .score-low {
+            background: linear-gradient(90deg, #43e97b, #38f9d7);
+        }
+
+        .export-buttons {
+            margin-bottom: 20px;
+        }
+
+        .export-button {
+            background: #28a745;
+            color: white;
+            padding: 8px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        .export-button:hover {
+            background: #218838;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+            .upload-section,
+            .export-buttons,
+            .search-box {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Vulnerability Prioritization Dashboard</h1>
+        <p class="subtitle">Risk-based vulnerability assessment with EPSS scoring</p>
+
+        <!-- Collapsible Upload Section -->
+        <div class="upload-section">
+            <div class="upload-header" onclick="toggleUploadSection()">
+                <h3>📁 Load Vulnerabilities Data</h3>
+                <span class="collapse-icon" id="collapseIcon">▼</span>
+            </div>
+            <div class="upload-content" id="uploadContent">
+                <input type="file" id="fileInput" accept=".json">
+                <label for="fileInput" class="upload-button">Choose JSON File</label>
+                <p style="margin-top: 10px; color: #666;">Upload the *_prioritized.json file generated by the prioritizer</p>
+            </div>
+        </div>
+
+        <div id="dashboardContent" style="display: none;">
+            <!-- Stats Section -->
+            <div class="stats-grid" id="statsGrid"></div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('assets')">Assets View</button>
+                <button class="tab" onclick="switchTab('cves')">CVEs View</button>
+            </div>
+
+            <!-- Export Buttons -->
+            <div class="export-buttons">
+                <button class="export-button" onclick="exportToCSV()">Export Current View to CSV</button>
+                <button class="export-button" onclick="printReport()">Print Report</button>
+            </div>
+
+            <!-- Assets Tab -->
+            <div id="assetsTab" class="tab-content active">
+                <input type="text" class="search-box" id="assetSearch" placeholder="🔍 Search assets by name..." onkeyup="filterAssets()">
+                <div class="table-container">
+                    <table id="assetsTable">
+                        <thead>
+                            <tr>
+                                <th class="sortable" onclick="sortAssetsTable(0)">Asset Name <span class="sort-icon">▼</span></th>
+                                <th class="sortable" onclick="sortAssetsTable(1)">Asset Risk Score <span class="sort-icon">▼</span></th>
+                                <th class="sortable" onclick="sortAssetsTable(2)">Risk Level <span class="sort-icon">▼</span></th>
+                                <th class="sortable" onclick="sortAssetsTable(3)">Criticality <span class="sort-icon">▼</span></th>
+                                <th class="sortable" onclick="sortAssetsTable(4)">Vulnerability Count <span class="sort-icon">▼</span></th>
+                                <th>Associated CVEs (Top 10)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="assetsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- CVEs Tab -->
+            <div id="cvesTab" class="tab-content">
+                <input type="text" class="search-box" id="cveSearch" placeholder="🔍 Search CVEs..." onkeyup="filterCVEs()">
+                <div class="table-container">
+                    <table id="cvesTable">
+                        <thead>
+                            <tr>
+                                <th class="sortable" onclick="sortCVEsTable(0)">Priority <span class="sort-icon">▼</span></th>
+                                <th class="sortable" onclick="sortCVEsTable(1)">CVE ID <span class="sort-icon">▼</span></th>
+                                <th class="sortable" onclick="sortCVEsTable(2)">Risk Score <span class="sort-icon">▼</span></th>
+                                <th class="sortable" onclick="sortCVEsTable(3)">Risk Level <span class="sort-icon">▼</span></th>
+                                <th class="sortable" onclick="sortCVEsTable(4)">CVSS <span class="sort-icon">▼</span></th>
+                                <th class="sortable" onclick="sortCVEsTable(5)">EPSS <span class="sort-icon">▼</span></th>
+                                <th class="sortable" onclick="sortCVEsTable(6)">Asset Count <span class="sort-icon">▼</span></th>
+                                <th>Affected Assets</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cvesTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="noData" class="no-data">
+            <p>No data loaded. Please upload a prioritized vulnerabilities JSON file.</p>
+        </div>
+    </div>
+
+    <!-- Asset Detail Modal -->
+    <div id="assetModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalAssetName">Asset Details</h2>
+                <button class="modal-close" onclick="closeAssetModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="asset-info-grid" id="modalAssetInfo"></div>
+                <h3 style="margin-bottom: 15px; color: #333;">All Vulnerabilities</h3>
+                <div class="table-container" style="max-height: 400px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>CVE ID</th>
+                                <th>Risk Score</th>
+                                <th>Risk Level</th>
+                                <th>CVSS</th>
+                                <th>EPSS</th>
+                                <th>CISA KEV</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalVulnerabilitiesTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let vulnerabilities = [];
+        let assetData = {};
+        let currentAssetSort = { column: 1, ascending: false };
+        let currentCVESort = { column: 0, ascending: true };
+
+        // Toggle upload section
+        function toggleUploadSection() {
+            const content = document.getElementById('uploadContent');
+            const icon = document.getElementById('collapseIcon');
+            
+            content.classList.toggle('collapsed');
+            icon.classList.toggle('collapsed');
+        }
+
+        // File upload handler
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        vulnerabilities = data.vulnerabilities || [];
+                        processData();
+                        displayData();
+                        
+                        // Auto-collapse upload section after successful load
+                        const content = document.getElementById('uploadContent');
+                        const icon = document.getElementById('collapseIcon');
+                        content.classList.add('collapsed');
+                        icon.classList.add('collapsed');
+                    } catch (error) {
+                        alert('Error parsing JSON file: ' + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+
+        function processData() {
+            assetData = {};
+
+            vulnerabilities.forEach(vuln => {
+                vuln.affected_assets.forEach(asset => {
+                    if (!assetData[asset]) {
+                        assetData[asset] = {
+                            name: asset,
+                            vulnerabilities: [],
+                            totalRiskScore: 0,
+                            maxRiskScore: 0,
+                            criticality: vuln.asset_criticality,
+                            exposure: vuln.exposure_level,
+                            riskLevel: 'LOW'
+                        };
+                    }
+                    
+                    assetData[asset].vulnerabilities.push({
+                        cve_id: vuln.cve_id,
+                        risk_score: vuln.risk_score,
+                        risk_level: vuln.risk_level,
+                        cvss_score: vuln.cvss_score,
+                        epss_score: vuln.epss_score,
+                        in_cisa_kev: vuln.in_cisa_kev
+                    });
+
+                    assetData[asset].totalRiskScore += vuln.risk_score;
+                    assetData[asset].maxRiskScore = Math.max(assetData[asset].maxRiskScore, vuln.risk_score);
+                });
+            });
+
+            Object.keys(assetData).forEach(assetName => {
+                const asset = assetData[assetName];
+                asset.avgRiskScore = asset.totalRiskScore / asset.vulnerabilities.length;
+                
+                if (asset.avgRiskScore >= 80) {
+                    asset.riskLevel = 'CRITICAL';
+                } else if (asset.avgRiskScore >= 60) {
+                    asset.riskLevel = 'HIGH';
+                } else if (asset.avgRiskScore >= 40) {
+                    asset.riskLevel = 'MEDIUM';
+                } else if (asset.avgRiskScore >= 20) {
+                    asset.riskLevel = 'LOW';
+                } else {
+                    asset.riskLevel = 'MINIMAL';
+                }
+            });
+        }
+
+        function displayData() {
+            document.getElementById('dashboardContent').style.display = 'block';
+            document.getElementById('noData').style.display = 'none';
+
+            displayStats();
+            displayAssetsTable();
+            displayCVEsTable();
+        }
+
+        function displayStats() {
+            const statsGrid = document.getElementById('statsGrid');
+            
+            const totalVulns = vulnerabilities.length;
+            const totalAssets = Object.keys(assetData).length;
+            const criticalCount = vulnerabilities.filter(v => v.risk_level === 'CRITICAL').length;
+            const highCount = vulnerabilities.filter(v => v.risk_level === 'HIGH').length;
+            const cisaKevCount = vulnerabilities.filter(v => v.in_cisa_kev).length;
+
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${totalVulns}</div>
+                    <div class="stat-label">Total Vulnerabilities</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${totalAssets}</div>
+                    <div class="stat-label">Total Assets</div>
+                </div>
+                <div class="stat-card critical">
+                    <div class="stat-value">${criticalCount}</div>
+                    <div class="stat-label">Critical Risk</div>
+                </div>
+                <div class="stat-card high">
+                    <div class="stat-value">${highCount}</div>
+                    <div class="stat-label">High Risk</div>
+                </div>
+                <div class="stat-card medium">
+                    <div class="stat-value">${cisaKevCount}</div>
+                    <div class="stat-label">CISA KEV</div>
+                </div>
+            `;
+        }
+
+        function displayAssetsTable() {
+            const tbody = document.getElementById('assetsTableBody');
+            tbody.innerHTML = '';
+
+            const assetsArray = Object.values(assetData).sort((a, b) => b.avgRiskScore - a.avgRiskScore);
+
+            assetsArray.forEach(asset => {
+                const cveList = asset.vulnerabilities
+                    .sort((a, b) => b.risk_score - a.risk_score)
+                    .slice(0, 10)
+                    .map(v => v.cve_id)
+                    .join(', ');
+                
+                const moreCount = asset.vulnerabilities.length > 10 ? 
+                    ` (+${asset.vulnerabilities.length - 10} more)` : '';
+
+                const scoreBarClass = asset.riskLevel === 'CRITICAL' ? 'score-critical' :
+                                     asset.riskLevel === 'HIGH' ? 'score-high' :
+                                     asset.riskLevel === 'MEDIUM' ? 'score-medium' : 'score-low';
+
+                const row = document.createElement('tr');
+                row.className = 'asset-row';
+                row.onclick = () => showAssetDetails(asset.name);
+                row.innerHTML = `
+                    <td><strong>${asset.name}</strong></td>
+                    <td>
+                        <strong>${asset.avgRiskScore.toFixed(1)}</strong> / 100
+                        <div class="asset-score-bar">
+                            <div class="${scoreBarClass} asset-score-fill" style="width: ${asset.avgRiskScore}%"></div>
+                        </div>
+                    </td>
+                    <td><span class="risk-badge risk-${asset.riskLevel}">${asset.riskLevel}</span></td>
+                    <td>${asset.criticality}</td>
+                    <td>${asset.vulnerabilities.length}</td>
+                    <td class="cve-list" title="${asset.vulnerabilities.map(v => v.cve_id).join(', ')}">${cveList}${moreCount}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function displayCVEsTable() {
+            const tbody = document.getElementById('cvesTableBody');
+            tbody.innerHTML = '';
+
+            vulnerabilities.forEach(vuln => {
+                const assetList = vuln.affected_assets.slice(0, 5).join(', ');
+                const moreCount = vuln.affected_assets.length > 5 ? 
+                    ` (+${vuln.affected_assets.length - 5} more)` : '';
+
+                const cisaBadge = vuln.in_cisa_kev ? ' <span style="color: red; font-weight: bold;">🚨 CISA KEV</span>' : '';
+
+                const row = `
+                    <tr>
+                        <td><strong>#${vuln.priority_rank}</strong></td>
+                        <td>
+                            <a href="https://nvd.nist.gov/vuln/detail/${vuln.cve_id}" target="_blank" class="cve-link">
+                                ${vuln.cve_id}
+                            </a>${cisaBadge}
+                        </td>
+                        <td><strong>${vuln.risk_score}</strong></td>
+                        <td><span class="risk-badge risk-${vuln.risk_level}">${vuln.risk_level}</span></td>
+                        <td>${vuln.cvss_score}</td>
+                        <td>${(vuln.epss_score * 100).toFixed(2)}%</td>
+                        <td>${vuln.affected_assets.length}</td>
+                        <td class="asset-list" title="${vuln.affected_assets.join(', ')}">${assetList}${moreCount}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        function showAssetDetails(assetName) {
+            const asset = assetData[assetName];
+            if (!asset) return;
+
+            // Update modal header
+            document.getElementById('modalAssetName').textContent = assetName;
+
+            // Update asset info cards
+            const criticalVulns = asset.vulnerabilities.filter(v => v.risk_level === 'CRITICAL').length;
+            const highVulns = asset.vulnerabilities.filter(v => v.risk_level === 'HIGH').length;
+            const cisaKevVulns = asset.vulnerabilities.filter(v => v.in_cisa_kev).length;
+
+            document.getElementById('modalAssetInfo').innerHTML = `
+                <div class="asset-info-card">
+                    <div class="asset-info-label">Risk Score</div>
+                    <div class="asset-info-value">${asset.avgRiskScore.toFixed(1)}</div>
+                </div>
+                <div class="asset-info-card">
+                    <div class="asset-info-label">Risk Level</div>
+                    <div class="asset-info-value">
+                        <span class="risk-badge risk-${asset.riskLevel}">${asset.riskLevel}</span>
+                    </div>
+                </div>
+                <div class="asset-info-card">
+                    <div class="asset-info-label">Total Vulnerabilities</div>
+                    <div class="asset-info-value">${asset.vulnerabilities.length}</div>
+                </div>
+                <div class="asset-info-card">
+                    <div class="asset-info-label">Critical Vulnerabilities</div>
+                    <div class="asset-info-value">${criticalVulns}</div>
+                </div>
+                <div class="asset-info-card">
+                    <div class="asset-info-label">High Vulnerabilities</div>
+                    <div class="asset-info-value">${highVulns}</div>
+                </div>
+                <div class="asset-info-card">
+                    <div class="asset-info-label">CISA KEV</div>
+                    <div class="asset-info-value">${cisaKevVulns}</div>
+                </div>
+            `;
+
+            // Update vulnerabilities table
+            const tbody = document.getElementById('modalVulnerabilitiesTable');
+            tbody.innerHTML = '';
+
+            const sortedVulns = asset.vulnerabilities.sort((a, b) => b.risk_score - a.risk_score);
+            sortedVulns.forEach(vuln => {
+                const cisaBadge = vuln.in_cisa_kev ? '🚨' : '';
+                const row = `
+                    <tr>
+                        <td>
+                            <a href="https://nvd.nist.gov/vuln/detail/${vuln.cve_id}" target="_blank" class="cve-link">
+                                ${vuln.cve_id}
+                            </a> ${cisaBadge}
+                        </td>
+                        <td><strong>${vuln.risk_score}</strong></td>
+                        <td><span class="risk-badge risk-${vuln.risk_level}">${vuln.risk_level}</span></td>
+                        <td>${vuln.cvss_score}</td>
+                        <td>${(vuln.epss_score * 100).toFixed(2)}%</td>
+                        <td>${vuln.in_cisa_kev ? 'Yes' : 'No'}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+
+            // Show modal
+            document.getElementById('assetModal').style.display = 'block';
+        }
+
+        function closeAssetModal() {
+            document.getElementById('assetModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('assetModal');
+            if (event.target == modal) {
+                closeAssetModal();
+            }
+        }
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeAssetModal();
+            }
+        });
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            if (tab === 'assets') {
+                document.getElementById('assetsTab').classList.add('active');
+            } else {
+                document.getElementById('cvesTab').classList.add('active');
+            }
+        }
+
+        function filterAssets() {
+            const searchTerm = document.getElementById('assetSearch').value.toLowerCase();
+            const rows = document.querySelectorAll('#assetsTableBody tr');
+            
+            rows.forEach(row => {
+                const assetName = row.cells[0].textContent.toLowerCase();
+                row.style.display = assetName.includes(searchTerm) ? '' : 'none';
+            });
+        }
+
+        function filterCVEs() {
+            const searchTerm = document.getElementById('cveSearch').value.toLowerCase();
+            const rows = document.querySelectorAll('#cvesTableBody tr');
+            
+            rows.forEach(row => {
+                const cveId = row.cells[1].textContent.toLowerCase();
+                row.style.display = cveId.includes(searchTerm) ? '' : 'none';
+            });
+        }
+
+        function sortAssetsTable(column) {
+            const tbody = document.getElementById('assetsTableBody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            const ascending = currentAssetSort.column === column ? !currentAssetSort.ascending : true;
+            currentAssetSort = { column, ascending };
+
+            rows.sort((a, b) => {
+                let aVal = a.cells[column].textContent.trim();
+                let bVal = b.cells[column].textContent.trim();
+
+                if (column === 1 || column === 4) {
+                    aVal = parseFloat(aVal);
+                    bVal = parseFloat(bVal);
+                }
+
+                if (aVal < bVal) return ascending ? -1 : 1;
+                if (aVal > bVal) return ascending ? 1 : -1;
+                return 0;
+            });
+
+            tbody.innerHTML = '';
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        function sortCVEsTable(column) {
+            const tbody = document.getElementById('cvesTableBody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            const ascending = currentCVESort.column === column ? !currentCVESort.ascending : true;
+            currentCVESort = { column, ascending };
+
+            rows.sort((a, b) => {
+                let aVal = a.cells[column].textContent.trim();
+                let bVal = b.cells[column].textContent.trim();
+
+                if (column === 0 || column === 2 || column === 4 || column === 5 || column === 6) {
+                    aVal = parseFloat(aVal.replace(/[^0-9.-]/g, ''));
+                    bVal = parseFloat(bVal.replace(/[^0-9.-]/g, ''));
+                }
+
+                if (aVal < bVal) return ascending ? -1 : 1;
+                if (aVal > bVal) return ascending ? 1 : -1;
+                return 0;
+            });
+
+            tbody.innerHTML = '';
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        function exportToCSV() {
+            const activeTab = document.querySelector('.tab-content.active').id;
+            
+            if (activeTab === 'assetsTab') {
+                exportAssetsToCSV();
+            } else {
+                exportCVEsToCSV();
+            }
+        }
+
+        function exportAssetsToCSV() {
+            const assetsArray = Object.values(assetData).sort((a, b) => b.avgRiskScore - a.avgRiskScore);
+            
+            let csv = 'Asset Name,Average Risk Score,Risk Level,Criticality,Vulnerability Count,CVE List\n';
+            
+            assetsArray.forEach(asset => {
+                const cveList = asset.vulnerabilities.map(v => v.cve_id).join('; ');
+                csv += `"${asset.name}",${asset.avgRiskScore.toFixed(1)},${asset.riskLevel},${asset.criticality},${asset.vulnerabilities.length},"${cveList}"\n`;
+            });
+
+            downloadCSV(csv, 'assets_report.csv');
+        }
+
+        function exportCVEsToCSV() {
+            let csv = 'Priority,CVE ID,Risk Score,Risk Level,CVSS,EPSS,Asset Count,Affected Assets,CISA KEV\n';
+            
+            vulnerabilities.forEach(vuln => {
+                const assetList = vuln.affected_assets.join('; ');
+                csv += `${vuln.priority_rank},"${vuln.cve_id}",${vuln.risk_score},${vuln.risk_level},${vuln.cvss_score},${(vuln.epss_score * 100).toFixed(2)},${vuln.affected_assets.length},"${assetList}",${vuln.in_cisa_kev}\n`;
+            });
+
+            downloadCSV(csv, 'cves_report.csv');
+        }
+
+        function downloadCSV(csv, filename) {
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+
+        function printReport() {
+            window.print();
+        }
+    </script>
+</body>
+</html>
