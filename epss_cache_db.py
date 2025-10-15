@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""
-EPSS Cache Database
-SQLite-based caching for EPSS API calls and CISA KEV data
-"""
-
 import sqlite3
 import json
 from datetime import datetime, timedelta
