@@ -1,9 +1,4 @@
 #!/usr/bin/env python3
-"""
-Vulnerability Prioritizer Runner v3
-Supports multiple data sources: Nessus, Tenable, Qualys, etc.
-"""
-
 import sys
 import os
 import argparse
