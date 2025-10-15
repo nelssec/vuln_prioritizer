@@ -1,179 +1,177 @@
-# READ ME FIRST - Qualys CSV Support Added!
+# Vulnerability Prioritizer
 
-## Your Question
-"Can we make sure this data works with the script" - about your Qualys CSV file
+## Overview
 
-## Answer
-YES! It works perfectly! ✓
-
-Tested with your actual file:
-- 11,326 lines processed
-- 1,998 unique CVEs extracted
-- 100% working
-
-## What You Need to Download
-
-### Required Files (3 files)
-1. **vulnerability_prioritizer_v3.py** (38 KB) - Main engine with Qualys CSV support
-2. **epss_cache_db.py** (11 KB) - Database caching module
-3. **run_prioritizer_v3.py** (6.5 KB) - Command-line runner
-
-### Optional Files
-4. **test_apis.py** (4.2 KB) - Test API connectivity
-5. **FINAL_UPDATE_SUMMARY.md** - Complete documentation of changes
-
-All files are in the outputs folder - download them to get started.
-
-## Quick Start (3 Steps)
-
-### Step 1: Install Python dependency
-```bash
-pip install requests
-```
-
-### Step 2: Run the script with your Qualys CSV
-```bash
-python3 run_prioritizer_v3.py --source qualys qualys.csv
-```
-
-### Step 3: Review results
-Open the generated files:
-- **qualys_prioritized.csv** - Excel-friendly, sorted by risk
-- **qualys_prioritized.json** - JSON format for integrations
-
-That's it!
+This tool performs risk-based vulnerability prioritization using EPSS scoring and asset criticality. It processes vulnerability scan data and generates prioritized reports with an interactive dashboard for analysis.
 
 ## What It Does
 
-1. Reads your Qualys CSV export (any size)
-2. Extracts all CVEs and asset information
-3. Fetches EPSS exploitation probability scores
-4. Checks CISA Known Exploited Vulnerabilities
-5. Calculates comprehensive risk scores
-6. Outputs prioritized list with:
-   - Risk ranking (1 = highest)
-   - EPSS scores
-   - Asset details
-   - SLA recommendations
+The prioritizer analyzes vulnerabilities across your infrastructure and assigns risk scores based on multiple factors:
 
-## Example Output
+- CVSS base scores from vulnerability data
+- EPSS probability scores from FIRST.org
+- CISA Known Exploited Vulnerabilities catalog
+- Asset criticality levels
+- Network exposure levels
 
-```
-Priority_Rank,CVE_ID,Risk_Score,Risk_Level,EPSS_Score
-1,CVE-2024-3094,95.2,CRITICAL,0.97532
-2,CVE-2023-46604,89.4,CRITICAL,0.87234
-3,CVE-2024-21762,82.1,HIGH,0.65432
-```
+Each vulnerability receives a weighted risk score that determines remediation priority. Assets are evaluated based on their average vulnerability risk.
 
-## Features
+## Requirements
 
-- Supports Qualys CSV format (tested with your data!)
-- Also supports Nessus and Tenable XML files
-- Database caching (90% faster on repeat runs)
-- No emojis or icons (clean professional output)
-- Correct EPSS API implementation
-- CISA KEV integration
+Python 3.8 or higher
 
-## Command Options
+Required packages:
+- requests
+- pandas
+- openpyxl
 
-```bash
-# Basic
-python3 run_prioritizer_v3.py --source qualys qualys.csv
+Install dependencies:
+pip install requests pandas openpyxl
 
-# Custom output name
-python3 run_prioritizer_v3.py --source qualys --output-prefix company_oct qualys.csv
+## Input Format
 
-# Show top 50 vulnerabilities
-python3 run_prioritizer_v3.py --source qualys --top-n 50 qualys.csv
+The tool accepts vulnerability scan data in CSV format with the following required columns:
 
-# No caching (always use live API)
-python3 run_prioritizer_v3.py --source qualys --no-cache qualys.csv
-```
+- DNS: Asset hostname or identifier
+- IP: Asset IP address
+- CVE ID: CVE identifier
+- CVSS Base: CVSS base score
+- Severity: Vulnerability severity level
 
-## Files Created After Running
+Optional columns for enhanced analysis:
+- Title: Vulnerability title
+- First Detected: Initial detection timestamp
+- Last Detected: Most recent detection timestamp
 
-1. **qualys_prioritized.csv** - Prioritized vulnerabilities
-2. **qualys_prioritized.json** - JSON export
-3. **epss_cache.db** - SQLite cache (automatic)
+## Configuration
 
-## How Qualys Data is Processed
+Edit the prioritizer script to set:
 
-### QDS to CVSS Mapping
-Your Qualys QDS scores (0-100) are mapped to CVSS (0-10):
-- QDS 90-100 → CVSS 9.0-10.0 (Critical)
-- QDS 70-89 → CVSS 7.0-8.9 (High)
-- QDS 40-69 → CVSS 4.0-6.9 (Medium)
-- QDS 0-39 → CVSS 0-3.9 (Low)
+Asset criticality levels:
+- HIGH: Mission critical systems
+- MEDIUM: Important but not critical
+- LOW: Non-essential systems
 
-### Asset Criticality Mapping
-Qualys 1-5 scale mapped to system:
-- 5 → CRITICAL
-- 4 → HIGH
-- 3 → MEDIUM
-- 2 → LOW
-- 1 → MINIMAL
+Exposure levels:
+- EXTERNAL: Internet-facing assets
+- INTERNAL: Internal network assets
+- ISOLATED: Air-gapped or restricted access
 
-### Filtering
-- Only processes ACTIVE findings
-- Skips resolved vulnerabilities
-- Groups by unique CVE
-- Tracks all affected assets
+Risk score weights:
+- CVSS weight: Default 0.40
+- EPSS weight: Default 0.35
+- CISA KEV weight: Default 0.15
+- Criticality weight: Default 0.10
 
-## Troubleshooting
+## Usage
 
-### Problem: "No vulnerabilities found"
-**Solution:** Check that your Qualys export has cveId column and ACTIVE findings
+Run the prioritizer:
+python run_prioritizer_v3.py
 
-### Problem: API returns 403
-**Solution:** Check firewall/proxy settings. Code is correct - just network restriction.
+The script will:
+1. Load vulnerability data from CSV
+2. Fetch EPSS scores from FIRST.org API
+3. Check against CISA KEV catalog
+4. Calculate risk scores for each vulnerability
+5. Generate prioritized output files
 
-### Problem: Script runs slow
-**Solution:** Second run will be much faster (uses cache). Cache auto-updates every 7 days.
+## Output Files
 
-## Multiple Sources
+The tool generates three output files:
 
-You can process different scanners:
+prioritized.json: Complete vulnerability data with risk scores and metadata. Used as input for the dashboard.
 
-```bash
-# Process Qualys
-python3 run_prioritizer_v3.py --source qualys qualys.csv
+prioritized.csv: Spreadsheet format for analysis and reporting. Includes all vulnerability details with calculated risk scores.
 
-# Process Nessus
-python3 run_prioritizer_v3.py --source nessus scan.nessus
+dashboard HTML: Interactive web interface for vulnerability analysis. No server required, runs entirely in browser.
 
-# Process Tenable
-python3 run_prioritizer_v3.py --source tenable export.nessus
+## Dashboard Features
 
-# All use the same EPSS cache!
-```
+The dashboard provides:
 
-## Documentation Files Available
+Asset view showing risk scores and vulnerability counts per host
+CVE view with detailed vulnerability information sorted by priority
+Search and filter capabilities
+Sortable columns
+Export to CSV functionality
+Detailed asset drill-down showing all associated vulnerabilities
 
-- **FINAL_UPDATE_SUMMARY.md** - Complete overview of what was added
-- **QUALYS_CSV_SUPPORT.md** - Detailed Qualys documentation
-- **README_V3.md** - Full system documentation
-- **QUICK_START_V3.md** - Quick reference guide
+To use the dashboard:
+1. Open the HTML file in a web browser
+2. Upload the generated JSON file
+3. Analyze and interact with the data
 
-## What Changed From Original Version
+## EPSS Cache
 
-1. Fixed EPSS API (now uses correct endpoint)
-2. Added database caching (SQLite)
-3. Removed all emojis/icons from output
-4. Added Qualys CSV support ← **NEW!**
-5. Removed hardcoded local database file
+The tool maintains a local SQLite database to cache EPSS scores. This reduces API calls and improves performance on subsequent runs. The cache is automatically updated when new CVEs are encountered.
 
-## Production Ready
+## Risk Score Calculation
 
-Your Qualys CSV file has been tested and works perfectly. The system is ready for production use.
+Risk scores are calculated using a weighted formula:
 
-Download the 3 required Python files and run:
+Risk Score = (CVSS Weight × CVSS Score) + (EPSS Weight × EPSS Score) + (CISA KEV Bonus) + (Criticality Bonus)
 
-```bash
-python3 run_prioritizer_v3.py --source qualys qualys.csv
-```
+All scores are normalized to a 0-100 scale.
 
-Done!
+Risk levels are assigned based on final scores:
+- CRITICAL: 80-100
+- HIGH: 60-79
+- MEDIUM: 40-59
+- LOW: 20-39
+- MINIMAL: 0-19
 
----
+## API Dependencies
 
-Questions? See FINAL_UPDATE_SUMMARY.md for complete details.
+FIRST.org EPSS API: Provides exploitation probability scores
+CISA KEV API: Provides known exploited vulnerabilities list
+
+Both APIs are accessed over HTTPS. No authentication required. The tool implements retry logic and rate limiting to handle API failures gracefully.
+
+## GitHub Pages Deployment
+
+The dashboard can be hosted on GitHub Pages for team access:
+
+1. Create a docs folder in your repository
+2. Place the index.html file in the docs folder
+3. Enable GitHub Pages in repository settings
+4. Select the docs folder as the source
+5. Access the dashboard at username.github.io/repository-name
+
+No server-side processing is required. All data analysis happens in the browser. Vulnerability data is never transmitted to external servers.
+
+## Performance Considerations
+
+Processing time scales with vulnerability count and asset count. Typical performance:
+
+- 1000 vulnerabilities: 1-2 minutes
+- 10000 vulnerabilities: 5-10 minutes
+- 50000 vulnerabilities: 20-30 minutes
+
+Most processing time is spent on EPSS API calls. Cached CVEs process instantly.
+
+## Output Customization
+
+Modify the script to adjust:
+- Risk score thresholds
+- Weight distributions
+- Asset criticality mappings
+- Exposure level definitions
+- Output format and columns
+
+## Limitations
+
+The tool assumes:
+- One vulnerability scan input file
+- Standard CVE identifiers
+- CVSS v3 scoring
+- Network connectivity for API access
+
+Assets without CVE identifiers cannot be risk-scored. Manual vulnerabilities require CVE mapping before processing.
+
+## Data Privacy
+
+All processing occurs locally. No vulnerability data is transmitted to external services except:
+- CVE IDs sent to EPSS API for scoring
+- CVE IDs sent to CISA API for KEV checking
+
+Asset names, IP addresses, and other identifying information remain local.
