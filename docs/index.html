@@ -237,6 +237,19 @@
             padding: 20px;
             border-radius: 8px;
             text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+
+        .stat-card.active {
+            box-shadow: 0 0 0 3px white, 0 0 0 6px #007bff;
+            transform: scale(1.05);
         }
 
         .stat-card.critical {
@@ -262,6 +275,12 @@
             opacity: 0.9;
         }
 
+        .stat-sublabel {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 5px;
+        }
+
         .search-box {
             width: 100%;
             padding: 12px;
@@ -269,6 +288,40 @@
             border-radius: 5px;
             font-size: 14px;
             margin-bottom: 20px;
+        }
+
+        .filter-info {
+            background: #e3f2fd;
+            border-left: 4px solid #007bff;
+            padding: 12px 20px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .filter-info.active {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .filter-info-text {
+            color: #0d47a1;
+            font-weight: 600;
+        }
+
+        .filter-clear {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 6px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+
+        .filter-clear:hover {
+            background: #0056b3;
         }
 
         .table-container {
@@ -589,6 +642,10 @@
             </div>
 
             <div id="assetsTab" class="tab-content active">
+                <div class="filter-info" id="assetFilterInfo">
+                    <span class="filter-info-text" id="assetFilterText"></span>
+                    <button class="filter-clear" onclick="clearAssetFilter()">Clear Filter</button>
+                </div>
                 <input type="text" class="search-box" id="assetSearch" placeholder="Search assets by name..." onkeyup="filterAssets()">
                 <div class="table-container">
                     <table id="assetsTable">
@@ -608,6 +665,10 @@
             </div>
 
             <div id="cvesTab" class="tab-content">
+                <div class="filter-info" id="cveFilterInfo">
+                    <span class="filter-info-text" id="cveFilterText"></span>
+                    <button class="filter-clear" onclick="clearCVEFilter()">Clear Filter</button>
+                </div>
                 <input type="text" class="search-box" id="cveSearch" placeholder="Search CVEs..." onkeyup="filterCVEs()">
                 <div class="table-container">
                     <table id="cvesTable">
@@ -667,6 +728,8 @@
         let assetData = {};
         let currentAssetSort = { column: 1, ascending: false };
         let currentCVESort = { column: 0, ascending: true };
+        let currentFilter = null;
+        let currentView = 'assets';
 
         function toggleUploadSection() {
             const content = document.getElementById('uploadContent');
@@ -837,32 +900,152 @@
             
             const totalVulns = vulnerabilities.length;
             const totalAssets = Object.keys(assetData).length;
-            const criticalCount = vulnerabilities.filter(v => v.risk_level === 'CRITICAL').length;
-            const highCount = vulnerabilities.filter(v => v.risk_level === 'HIGH').length;
+            const criticalVulnCount = vulnerabilities.filter(v => v.risk_level === 'CRITICAL').length;
+            const highVulnCount = vulnerabilities.filter(v => v.risk_level === 'HIGH').length;
             const cisaKevCount = vulnerabilities.filter(v => v.in_cisa_kev).length;
+            
+            const criticalAssetCount = Object.values(assetData).filter(a => a.riskLevel === 'CRITICAL').length;
+            const highAssetCount = Object.values(assetData).filter(a => a.riskLevel === 'HIGH').length;
+
+            const isAssetsView = currentView === 'assets';
+            const criticalLabel = isAssetsView ? 'Critical Risk Assets' : 'Critical Risk CVEs';
+            const highLabel = isAssetsView ? 'High Risk Assets' : 'High Risk CVEs';
+            const cisaLabel = isAssetsView ? 'CISA KEV Assets' : 'CISA KEV CVEs';
+            
+            const criticalCount = isAssetsView ? criticalAssetCount : criticalVulnCount;
+            const highCount = isAssetsView ? highAssetCount : highVulnCount;
+            
+            const cisaAssetCount = Object.values(assetData).filter(a => 
+                a.vulnerabilities.some(v => v.in_cisa_kev)
+            ).length;
+            const cisaDisplayCount = isAssetsView ? cisaAssetCount : cisaKevCount;
 
             statsGrid.innerHTML = `
-                <div class="stat-card">
-                    <div class="stat-value">${totalVulns}</div>
-                    <div class="stat-label">Total Vulnerabilities</div>
+                <div class="stat-card ${currentFilter === 'all' ? 'active' : ''}" onclick="filterByCategory('all')">
+                    <div class="stat-value">${isAssetsView ? totalAssets : totalVulns}</div>
+                    <div class="stat-label">${isAssetsView ? 'Total Assets' : 'Total Vulnerabilities'}</div>
+                    <div class="stat-sublabel">Click to show all</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-value">${totalAssets}</div>
-                    <div class="stat-label">Total Assets</div>
-                </div>
-                <div class="stat-card critical">
+                <div class="stat-card critical ${currentFilter === 'critical' ? 'active' : ''}" onclick="filterByCategory('critical')">
                     <div class="stat-value">${criticalCount}</div>
-                    <div class="stat-label">Critical Risk</div>
+                    <div class="stat-label">${criticalLabel}</div>
+                    <div class="stat-sublabel">Click to filter</div>
                 </div>
-                <div class="stat-card high">
+                <div class="stat-card high ${currentFilter === 'high' ? 'active' : ''}" onclick="filterByCategory('high')">
                     <div class="stat-value">${highCount}</div>
-                    <div class="stat-label">High Risk</div>
+                    <div class="stat-label">${highLabel}</div>
+                    <div class="stat-sublabel">Click to filter</div>
                 </div>
-                <div class="stat-card medium">
-                    <div class="stat-value">${cisaKevCount}</div>
-                    <div class="stat-label">CISA KEV</div>
+                <div class="stat-card medium ${currentFilter === 'cisa' ? 'active' : ''}" onclick="filterByCategory('cisa')">
+                    <div class="stat-value">${cisaDisplayCount}</div>
+                    <div class="stat-label">${cisaLabel}</div>
+                    <div class="stat-sublabel">Click to filter</div>
                 </div>
             `;
+        }
+
+        function filterByCategory(category) {
+            currentFilter = category === 'all' ? null : category;
+            displayStats();
+            
+            if (currentView === 'assets') {
+                applyAssetFilter();
+            } else {
+                applyCVEFilter();
+            }
+        }
+
+        function applyAssetFilter() {
+            const rows = document.querySelectorAll('#assetsTableBody tr');
+            const filterInfo = document.getElementById('assetFilterInfo');
+            const filterText = document.getElementById('assetFilterText');
+            
+            if (!currentFilter) {
+                rows.forEach(row => row.style.display = '');
+                filterInfo.classList.remove('active');
+                return;
+            }
+            
+            let visibleCount = 0;
+            rows.forEach(row => {
+                let shouldShow = false;
+                
+                if (currentFilter === 'critical') {
+                    const riskBadge = row.querySelector('.risk-badge');
+                    shouldShow = riskBadge && riskBadge.textContent.includes('CRITICAL');
+                } else if (currentFilter === 'high') {
+                    const riskBadge = row.querySelector('.risk-badge');
+                    shouldShow = riskBadge && riskBadge.textContent.includes('HIGH');
+                } else if (currentFilter === 'cisa') {
+                    const assetName = row.cells[0].textContent;
+                    const asset = assetData[assetName];
+                    shouldShow = asset && asset.vulnerabilities.some(v => v.in_cisa_kev);
+                }
+                
+                row.style.display = shouldShow ? '' : 'none';
+                if (shouldShow) visibleCount++;
+            });
+            
+            const filterLabels = {
+                'critical': 'Critical Risk Assets',
+                'high': 'High Risk Assets',
+                'cisa': 'Assets with CISA KEV'
+            };
+            
+            filterText.textContent = `Showing ${visibleCount} ${filterLabels[currentFilter]}`;
+            filterInfo.classList.add('active');
+        }
+
+        function applyCVEFilter() {
+            const rows = document.querySelectorAll('#cvesTableBody tr');
+            const filterInfo = document.getElementById('cveFilterInfo');
+            const filterText = document.getElementById('cveFilterText');
+            
+            if (!currentFilter) {
+                rows.forEach(row => row.style.display = '');
+                filterInfo.classList.remove('active');
+                return;
+            }
+            
+            let visibleCount = 0;
+            rows.forEach(row => {
+                let shouldShow = false;
+                
+                if (currentFilter === 'critical') {
+                    const riskBadge = row.querySelector('.risk-badge');
+                    shouldShow = riskBadge && riskBadge.textContent.includes('CRITICAL');
+                } else if (currentFilter === 'high') {
+                    const riskBadge = row.querySelector('.risk-badge');
+                    shouldShow = riskBadge && riskBadge.textContent.includes('HIGH');
+                } else if (currentFilter === 'cisa') {
+                    const cveCell = row.cells[1];
+                    shouldShow = cveCell && cveCell.textContent.includes('CISA KEV');
+                }
+                
+                row.style.display = shouldShow ? '' : 'none';
+                if (shouldShow) visibleCount++;
+            });
+            
+            const filterLabels = {
+                'critical': 'Critical Risk CVEs',
+                'high': 'High Risk CVEs',
+                'cisa': 'CVEs in CISA KEV'
+            };
+            
+            filterText.textContent = `Showing ${visibleCount} ${filterLabels[currentFilter]}`;
+            filterInfo.classList.add('active');
+        }
+
+        function clearAssetFilter() {
+            currentFilter = null;
+            displayStats();
+            applyAssetFilter();
+        }
+
+        function clearCVEFilter() {
+            currentFilter = null;
+            displayStats();
+            applyCVEFilter();
         }
 
         function renderAssetsTable() {
@@ -1085,8 +1268,14 @@
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             if (tab === 'assets') {
                 document.getElementById('assetsTab').classList.add('active');
+                currentView = 'assets';
+                displayStats();
+                if (currentFilter) applyAssetFilter();
             } else {
                 document.getElementById('cvesTab').classList.add('active');
+                currentView = 'cves';
+                displayStats();
+                if (currentFilter) applyCVEFilter();
             }
         }
 
@@ -1096,7 +1285,9 @@
             
             rows.forEach(row => {
                 const assetName = row.cells[0].textContent.toLowerCase();
-                row.style.display = assetName.includes(searchTerm) ? '' : 'none';
+                const matchesSearch = assetName.includes(searchTerm);
+                const matchesFilter = !currentFilter || row.style.display !== 'none';
+                row.style.display = matchesSearch ? (matchesFilter ? '' : 'none') : 'none';
             });
         }
 
@@ -1106,7 +1297,9 @@
             
             rows.forEach(row => {
                 const cveId = row.cells[1].textContent.toLowerCase();
-                row.style.display = cveId.includes(searchTerm) ? '' : 'none';
+                const matchesSearch = cveId.includes(searchTerm);
+                const matchesFilter = !currentFilter || row.style.display !== 'none';
+                row.style.display = matchesSearch ? (matchesFilter ? '' : 'none') : 'none';
             });
         }
 
