@@ -1,0 +1,47 @@
+{
+  "prioritization_weights": {
+    "cvss_weight": 0.15,
+    "epss_weight": 0.30,
+    "asset_context_weight": 0.25,
+    "threat_intel_weight": 0.25,
+    "temporal_weight": 0.05
+  },
+  "asset_classification": {
+    "critical_indicators": [
+      "prod",
+      "payment",
+      "customer",
+      "database",
+      "auth",
+      "critical",
+      "core",
+      "billing"
+    ],
+    "internet_facing_multiplier": 1.5,
+    "data_sensitivity_multiplier": 1.3,
+    "critical_asset_multiplier": 1.4
+  },
+  "patch_management": {
+    "critical_sla_hours": 24,
+    "high_sla_hours": 168,
+    "medium_sla_hours": 720,
+    "low_sla_hours": 2160
+  },
+  "api_settings": {
+    "epss_api": "https://api.first.org/data/v1/epss",
+    "cisa_kev_api": "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
+    "timeout": 10,
+    "max_retries": 3,
+    "rate_limit_delay": 1.0
+  },
+  "cache_settings": {
+    "epss_cache_days": 7,
+    "kev_cache_days": 1
+  },
+  "critical_override_conditions": {
+    "min_cvss_for_override": 7.0,
+    "min_epss_for_override": 0.5,
+    "require_cisa_kev": true,
+    "critical_asset_auto_promote": true
+  }
+}
