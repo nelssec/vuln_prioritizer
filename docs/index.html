@@ -38,7 +38,84 @@
             font-size: 14px;
         }
 
-        /* Collapsible Upload Section */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 50px;
+            border-radius: 15px;
+            text-align: center;
+            min-width: 400px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.5);
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 25px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .loading-subtext {
+            font-size: 15px;
+            color: #666;
+            margin-bottom: 20px;
+            min-height: 24px;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-top: 20px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
         .upload-section {
             background: #f9f9f9;
             border: 2px solid #ddd;
@@ -194,7 +271,6 @@
             margin-bottom: 20px;
         }
 
-        /* Enhanced scrollable tables */
         .table-container {
             overflow-x: auto;
             overflow-y: auto;
@@ -297,11 +373,6 @@
             transform: scale(1.01);
         }
 
-        .asset-row:active {
-            transform: scale(0.99);
-        }
-
-        /* Modal for asset details */
         .modal {
             display: none;
             position: fixed;
@@ -311,12 +382,6 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0,0,0,0.5);
-            animation: fadeIn 0.3s;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
         }
 
         .modal-content {
@@ -329,18 +394,6 @@
             max-height: 85vh;
             overflow: hidden;
             box-shadow: 0 5px 30px rgba(0,0,0,0.3);
-            animation: slideIn 0.3s;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateY(-50px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
         }
 
         .modal-header {
@@ -487,59 +540,66 @@
             }
             .upload-section,
             .export-buttons,
-            .search-box {
+            .search-box,
+            .loading-overlay {
                 display: none;
             }
         }
     </style>
 </head>
 <body>
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <div class="loading-text" id="loadingText">Processing Data</div>
+            <div class="loading-subtext" id="loadingSubtext">Please wait while we load your vulnerabilities</div>
+            <div class="progress-bar-container">
+                <div class="progress-bar-fill" id="progressBar">0%</div>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
         <h1>Vulnerability Prioritization Dashboard</h1>
         <p class="subtitle">Risk-based vulnerability assessment with EPSS scoring</p>
 
-        <!-- Collapsible Upload Section -->
         <div class="upload-section">
             <div class="upload-header" onclick="toggleUploadSection()">
-                <h3>📁 Load Vulnerabilities Data</h3>
-                <span class="collapse-icon" id="collapseIcon">▼</span>
+                <h3>Load Vulnerabilities Data</h3>
+                <span class="collapse-icon" id="collapseIcon">v</span>
             </div>
             <div class="upload-content" id="uploadContent">
                 <input type="file" id="fileInput" accept=".json">
                 <label for="fileInput" class="upload-button">Choose JSON File</label>
-                <p style="margin-top: 10px; color: #666;">Upload the *_prioritized.json file generated by the prioritizer</p>
+                <p style="margin-top: 10px; color: #666;">Upload the prioritized.json file generated by the prioritizer</p>
             </div>
         </div>
 
         <div id="dashboardContent" style="display: none;">
-            <!-- Stats Section -->
             <div class="stats-grid" id="statsGrid"></div>
 
-            <!-- Tabs -->
             <div class="tabs">
                 <button class="tab active" onclick="switchTab('assets')">Assets View</button>
                 <button class="tab" onclick="switchTab('cves')">CVEs View</button>
             </div>
 
-            <!-- Export Buttons -->
             <div class="export-buttons">
                 <button class="export-button" onclick="exportToCSV()">Export Current View to CSV</button>
                 <button class="export-button" onclick="printReport()">Print Report</button>
             </div>
 
-            <!-- Assets Tab -->
             <div id="assetsTab" class="tab-content active">
-                <input type="text" class="search-box" id="assetSearch" placeholder="🔍 Search assets by name..." onkeyup="filterAssets()">
+                <input type="text" class="search-box" id="assetSearch" placeholder="Search assets by name..." onkeyup="filterAssets()">
                 <div class="table-container">
                     <table id="assetsTable">
                         <thead>
                             <tr>
-                                <th class="sortable" onclick="sortAssetsTable(0)">Asset Name <span class="sort-icon">▼</span></th>
-                                <th class="sortable" onclick="sortAssetsTable(1)">Asset Risk Score <span class="sort-icon">▼</span></th>
-                                <th class="sortable" onclick="sortAssetsTable(2)">Risk Level <span class="sort-icon">▼</span></th>
-                                <th class="sortable" onclick="sortAssetsTable(3)">Criticality <span class="sort-icon">▼</span></th>
-                                <th class="sortable" onclick="sortAssetsTable(4)">Vulnerability Count <span class="sort-icon">▼</span></th>
-                                <th>Associated CVEs (Top 10)</th>
+                                <th class="sortable" onclick="sortAssetsTable(0)">Asset Name <span class="sort-icon">v</span></th>
+                                <th class="sortable" onclick="sortAssetsTable(1)">Asset Risk Score <span class="sort-icon">v</span></th>
+                                <th class="sortable" onclick="sortAssetsTable(2)">Risk Level <span class="sort-icon">v</span></th>
+                                <th class="sortable" onclick="sortAssetsTable(3)">Criticality <span class="sort-icon">v</span></th>
+                                <th class="sortable" onclick="sortAssetsTable(4)">Vulnerability Count <span class="sort-icon">v</span></th>
+                                <th>Associated CVEs</th>
                             </tr>
                         </thead>
                         <tbody id="assetsTableBody"></tbody>
@@ -547,20 +607,19 @@
                 </div>
             </div>
 
-            <!-- CVEs Tab -->
             <div id="cvesTab" class="tab-content">
-                <input type="text" class="search-box" id="cveSearch" placeholder="🔍 Search CVEs..." onkeyup="filterCVEs()">
+                <input type="text" class="search-box" id="cveSearch" placeholder="Search CVEs..." onkeyup="filterCVEs()">
                 <div class="table-container">
                     <table id="cvesTable">
                         <thead>
                             <tr>
-                                <th class="sortable" onclick="sortCVEsTable(0)">Priority <span class="sort-icon">▼</span></th>
-                                <th class="sortable" onclick="sortCVEsTable(1)">CVE ID <span class="sort-icon">▼</span></th>
-                                <th class="sortable" onclick="sortCVEsTable(2)">Risk Score <span class="sort-icon">▼</span></th>
-                                <th class="sortable" onclick="sortCVEsTable(3)">Risk Level <span class="sort-icon">▼</span></th>
-                                <th class="sortable" onclick="sortCVEsTable(4)">CVSS <span class="sort-icon">▼</span></th>
-                                <th class="sortable" onclick="sortCVEsTable(5)">EPSS <span class="sort-icon">▼</span></th>
-                                <th class="sortable" onclick="sortCVEsTable(6)">Asset Count <span class="sort-icon">▼</span></th>
+                                <th class="sortable" onclick="sortCVEsTable(0)">Priority <span class="sort-icon">v</span></th>
+                                <th class="sortable" onclick="sortCVEsTable(1)">CVE ID <span class="sort-icon">v</span></th>
+                                <th class="sortable" onclick="sortCVEsTable(2)">Risk Score <span class="sort-icon">v</span></th>
+                                <th class="sortable" onclick="sortCVEsTable(3)">Risk Level <span class="sort-icon">v</span></th>
+                                <th class="sortable" onclick="sortCVEsTable(4)">CVSS <span class="sort-icon">v</span></th>
+                                <th class="sortable" onclick="sortCVEsTable(5)">EPSS <span class="sort-icon">v</span></th>
+                                <th class="sortable" onclick="sortCVEsTable(6)">Asset Count <span class="sort-icon">v</span></th>
                                 <th>Affected Assets</th>
                             </tr>
                         </thead>
@@ -575,12 +634,11 @@
         </div>
     </div>
 
-    <!-- Asset Detail Modal -->
     <div id="assetModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="modalAssetName">Asset Details</h2>
-                <button class="modal-close" onclick="closeAssetModal()">&times;</button>
+                <button class="modal-close" onclick="closeAssetModal()">x</button>
             </div>
             <div class="modal-body">
                 <div class="asset-info-grid" id="modalAssetInfo"></div>
@@ -610,96 +668,168 @@
         let currentAssetSort = { column: 1, ascending: false };
         let currentCVESort = { column: 0, ascending: true };
 
-        // Toggle upload section
         function toggleUploadSection() {
             const content = document.getElementById('uploadContent');
             const icon = document.getElementById('collapseIcon');
-            
             content.classList.toggle('collapsed');
             icon.classList.toggle('collapsed');
         }
 
-        // File upload handler
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    try {
-                        const data = JSON.parse(e.target.result);
-                        vulnerabilities = data.vulnerabilities || [];
-                        processData();
-                        displayData();
-                        
-                        // Auto-collapse upload section after successful load
-                        const content = document.getElementById('uploadContent');
-                        const icon = document.getElementById('collapseIcon');
-                        content.classList.add('collapsed');
-                        icon.classList.add('collapsed');
-                    } catch (error) {
-                        alert('Error parsing JSON file: ' + error.message);
-                    }
-                };
-                reader.readAsText(file);
+        function updateProgress(percent, text) {
+            const progressBar = document.getElementById('progressBar');
+            progressBar.style.width = percent + '%';
+            progressBar.textContent = Math.round(percent) + '%';
+            if (text) {
+                document.getElementById('loadingSubtext').textContent = text;
             }
-        });
-
-        function processData() {
-            assetData = {};
-
-            vulnerabilities.forEach(vuln => {
-                vuln.affected_assets.forEach(asset => {
-                    if (!assetData[asset]) {
-                        assetData[asset] = {
-                            name: asset,
-                            vulnerabilities: [],
-                            totalRiskScore: 0,
-                            maxRiskScore: 0,
-                            criticality: vuln.asset_criticality,
-                            exposure: vuln.exposure_level,
-                            riskLevel: 'LOW'
-                        };
-                    }
-                    
-                    assetData[asset].vulnerabilities.push({
-                        cve_id: vuln.cve_id,
-                        risk_score: vuln.risk_score,
-                        risk_level: vuln.risk_level,
-                        cvss_score: vuln.cvss_score,
-                        epss_score: vuln.epss_score,
-                        in_cisa_kev: vuln.in_cisa_kev
-                    });
-
-                    assetData[asset].totalRiskScore += vuln.risk_score;
-                    assetData[asset].maxRiskScore = Math.max(assetData[asset].maxRiskScore, vuln.risk_score);
-                });
-            });
-
-            Object.keys(assetData).forEach(assetName => {
-                const asset = assetData[assetName];
-                asset.avgRiskScore = asset.totalRiskScore / asset.vulnerabilities.length;
-                
-                if (asset.avgRiskScore >= 80) {
-                    asset.riskLevel = 'CRITICAL';
-                } else if (asset.avgRiskScore >= 60) {
-                    asset.riskLevel = 'HIGH';
-                } else if (asset.avgRiskScore >= 40) {
-                    asset.riskLevel = 'MEDIUM';
-                } else if (asset.avgRiskScore >= 20) {
-                    asset.riskLevel = 'LOW';
-                } else {
-                    asset.riskLevel = 'MINIMAL';
-                }
-            });
         }
 
-        function displayData() {
-            document.getElementById('dashboardContent').style.display = 'block';
-            document.getElementById('noData').style.display = 'none';
+        function showLoading() {
+            document.getElementById('loadingOverlay').classList.add('active');
+        }
 
-            displayStats();
-            displayAssetsTable();
-            displayCVEsTable();
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('active');
+        }
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            showLoading();
+            updateProgress(5, 'Reading file: ' + file.name);
+
+            setTimeout(() => {
+                const reader = new FileReader();
+                
+                reader.onload = function(event) {
+                    setTimeout(() => {
+                        processFile(event.target.result);
+                    }, 100);
+                };
+
+                reader.onerror = function() {
+                    hideLoading();
+                    alert('Error reading file');
+                };
+
+                reader.readAsText(file);
+            }, 100);
+        });
+
+        function processFile(fileContent) {
+            updateProgress(15, 'Parsing JSON data...');
+            
+            setTimeout(() => {
+                try {
+                    const data = JSON.parse(fileContent);
+                    vulnerabilities = data.vulnerabilities || [];
+                    updateProgress(30, 'Found ' + vulnerabilities.length + ' vulnerabilities');
+                    
+                    setTimeout(() => {
+                        processDataInChunks();
+                    }, 100);
+                    
+                } catch (error) {
+                    hideLoading();
+                    alert('Error parsing JSON: ' + error.message);
+                }
+            }, 100);
+        }
+
+        function processDataInChunks() {
+            assetData = {};
+            const chunkSize = 500;
+            let currentIndex = 0;
+            
+            function processNextChunk() {
+                const endIndex = Math.min(currentIndex + chunkSize, vulnerabilities.length);
+                
+                for (let i = currentIndex; i < endIndex; i++) {
+                    const vuln = vulnerabilities[i];
+                    
+                    vuln.affected_assets.forEach(asset => {
+                        if (!assetData[asset]) {
+                            assetData[asset] = {
+                                name: asset,
+                                vulnerabilities: [],
+                                totalRiskScore: 0,
+                                maxRiskScore: 0,
+                                criticality: vuln.asset_criticality,
+                                exposure: vuln.exposure_level,
+                                riskLevel: 'LOW'
+                            };
+                        }
+                        
+                        assetData[asset].vulnerabilities.push({
+                            cve_id: vuln.cve_id,
+                            risk_score: vuln.risk_score,
+                            risk_level: vuln.risk_level,
+                            cvss_score: vuln.cvss_score,
+                            epss_score: vuln.epss_score,
+                            in_cisa_kev: vuln.in_cisa_kev
+                        });
+
+                        assetData[asset].totalRiskScore += vuln.risk_score;
+                        assetData[asset].maxRiskScore = Math.max(assetData[asset].maxRiskScore, vuln.risk_score);
+                    });
+                }
+                
+                const progress = 30 + ((endIndex / vulnerabilities.length) * 40);
+                updateProgress(progress, 'Processing vulnerabilities: ' + endIndex + ' of ' + vulnerabilities.length);
+                
+                currentIndex = endIndex;
+                
+                if (currentIndex < vulnerabilities.length) {
+                    setTimeout(processNextChunk, 10);
+                } else {
+                    setTimeout(finalizeProcessing, 100);
+                }
+            }
+            
+            processNextChunk();
+        }
+
+        function finalizeProcessing() {
+            updateProgress(75, 'Calculating risk levels...');
+            
+            setTimeout(() => {
+                Object.keys(assetData).forEach(assetName => {
+                    const asset = assetData[assetName];
+                    asset.avgRiskScore = asset.totalRiskScore / asset.vulnerabilities.length;
+                    
+                    if (asset.avgRiskScore >= 80) {
+                        asset.riskLevel = 'CRITICAL';
+                    } else if (asset.avgRiskScore >= 60) {
+                        asset.riskLevel = 'HIGH';
+                    } else if (asset.avgRiskScore >= 40) {
+                        asset.riskLevel = 'MEDIUM';
+                    } else if (asset.avgRiskScore >= 20) {
+                        asset.riskLevel = 'LOW';
+                    } else {
+                        asset.riskLevel = 'MINIMAL';
+                    }
+                });
+                
+                setTimeout(() => {
+                    renderDashboard();
+                }, 100);
+            }, 100);
+        }
+
+        function renderDashboard() {
+            updateProgress(85, 'Rendering dashboard...');
+            
+            setTimeout(() => {
+                document.getElementById('dashboardContent').style.display = 'block';
+                document.getElementById('noData').style.display = 'none';
+                
+                displayStats();
+                
+                setTimeout(() => {
+                    renderAssetsTable();
+                }, 50);
+            }, 100);
         }
 
         function displayStats() {
@@ -735,85 +865,145 @@
             `;
         }
 
-        function displayAssetsTable() {
-            const tbody = document.getElementById('assetsTableBody');
-            tbody.innerHTML = '';
+        function renderAssetsTable() {
+            updateProgress(90, 'Rendering assets table...');
+            
+            setTimeout(() => {
+                const tbody = document.getElementById('assetsTableBody');
+                tbody.innerHTML = '';
 
-            const assetsArray = Object.values(assetData).sort((a, b) => b.avgRiskScore - a.avgRiskScore);
-
-            assetsArray.forEach(asset => {
-                const cveList = asset.vulnerabilities
-                    .sort((a, b) => b.risk_score - a.risk_score)
-                    .slice(0, 10)
-                    .map(v => v.cve_id)
-                    .join(', ');
+                const assetsArray = Object.values(assetData).sort((a, b) => b.avgRiskScore - a.avgRiskScore);
+                const chunkSize = 100;
+                let currentIndex = 0;
                 
-                const moreCount = asset.vulnerabilities.length > 10 ? 
-                    ` (+${asset.vulnerabilities.length - 10} more)` : '';
+                function renderNextChunk() {
+                    const endIndex = Math.min(currentIndex + chunkSize, assetsArray.length);
+                    const fragment = document.createDocumentFragment();
+                    
+                    for (let i = currentIndex; i < endIndex; i++) {
+                        const asset = assetsArray[i];
+                        const cveList = asset.vulnerabilities
+                            .sort((a, b) => b.risk_score - a.risk_score)
+                            .slice(0, 10)
+                            .map(v => v.cve_id)
+                            .join(', ');
+                        
+                        const moreCount = asset.vulnerabilities.length > 10 ? 
+                            ' (+' + (asset.vulnerabilities.length - 10) + ' more)' : '';
 
-                const scoreBarClass = asset.riskLevel === 'CRITICAL' ? 'score-critical' :
-                                     asset.riskLevel === 'HIGH' ? 'score-high' :
-                                     asset.riskLevel === 'MEDIUM' ? 'score-medium' : 'score-low';
+                        const scoreBarClass = asset.riskLevel === 'CRITICAL' ? 'score-critical' :
+                                             asset.riskLevel === 'HIGH' ? 'score-high' :
+                                             asset.riskLevel === 'MEDIUM' ? 'score-medium' : 'score-low';
 
-                const row = document.createElement('tr');
-                row.className = 'asset-row';
-                row.onclick = () => showAssetDetails(asset.name);
-                row.innerHTML = `
-                    <td><strong>${asset.name}</strong></td>
-                    <td>
-                        <strong>${asset.avgRiskScore.toFixed(1)}</strong> / 100
-                        <div class="asset-score-bar">
-                            <div class="${scoreBarClass} asset-score-fill" style="width: ${asset.avgRiskScore}%"></div>
-                        </div>
-                    </td>
-                    <td><span class="risk-badge risk-${asset.riskLevel}">${asset.riskLevel}</span></td>
-                    <td>${asset.criticality}</td>
-                    <td>${asset.vulnerabilities.length}</td>
-                    <td class="cve-list" title="${asset.vulnerabilities.map(v => v.cve_id).join(', ')}">${cveList}${moreCount}</td>
-                `;
-                tbody.appendChild(row);
-            });
+                        const row = document.createElement('tr');
+                        row.className = 'asset-row';
+                        row.onclick = () => showAssetDetails(asset.name);
+                        row.innerHTML = `
+                            <td><strong>${asset.name}</strong></td>
+                            <td>
+                                <strong>${asset.avgRiskScore.toFixed(1)}</strong> / 100
+                                <div class="asset-score-bar">
+                                    <div class="${scoreBarClass} asset-score-fill" style="width: ${asset.avgRiskScore}%"></div>
+                                </div>
+                            </td>
+                            <td><span class="risk-badge risk-${asset.riskLevel}">${asset.riskLevel}</span></td>
+                            <td>${asset.criticality}</td>
+                            <td>${asset.vulnerabilities.length}</td>
+                            <td class="cve-list" title="${asset.vulnerabilities.map(v => v.cve_id).join(', ')}">${cveList}${moreCount}</td>
+                        `;
+                        fragment.appendChild(row);
+                    }
+                    
+                    tbody.appendChild(fragment);
+                    currentIndex = endIndex;
+                    
+                    const progress = 90 + ((currentIndex / assetsArray.length) * 5);
+                    updateProgress(progress, 'Rendering assets: ' + currentIndex + ' of ' + assetsArray.length);
+                    
+                    if (currentIndex < assetsArray.length) {
+                        setTimeout(renderNextChunk, 10);
+                    } else {
+                        setTimeout(renderCVEsTable, 50);
+                    }
+                }
+                
+                renderNextChunk();
+            }, 50);
         }
 
-        function displayCVEsTable() {
-            const tbody = document.getElementById('cvesTableBody');
-            tbody.innerHTML = '';
+        function renderCVEsTable() {
+            updateProgress(95, 'Rendering CVEs table...');
+            
+            setTimeout(() => {
+                const tbody = document.getElementById('cvesTableBody');
+                tbody.innerHTML = '';
 
-            vulnerabilities.forEach(vuln => {
-                const assetList = vuln.affected_assets.slice(0, 5).join(', ');
-                const moreCount = vuln.affected_assets.length > 5 ? 
-                    ` (+${vuln.affected_assets.length - 5} more)` : '';
+                const chunkSize = 200;
+                let currentIndex = 0;
+                
+                function renderNextChunk() {
+                    const endIndex = Math.min(currentIndex + chunkSize, vulnerabilities.length);
+                    const fragment = document.createDocumentFragment();
+                    
+                    for (let i = currentIndex; i < endIndex; i++) {
+                        const vuln = vulnerabilities[i];
+                        const assetList = vuln.affected_assets.slice(0, 5).join(', ');
+                        const moreCount = vuln.affected_assets.length > 5 ? 
+                            ' (+' + (vuln.affected_assets.length - 5) + ' more)' : '';
 
-                const cisaBadge = vuln.in_cisa_kev ? ' <span style="color: red; font-weight: bold;">🚨 CISA KEV</span>' : '';
+                        const cisaBadge = vuln.in_cisa_kev ? ' <span style="color: red; font-weight: bold;">CISA KEV</span>' : '';
 
-                const row = `
-                    <tr>
-                        <td><strong>#${vuln.priority_rank}</strong></td>
-                        <td>
-                            <a href="https://nvd.nist.gov/vuln/detail/${vuln.cve_id}" target="_blank" class="cve-link">
-                                ${vuln.cve_id}
-                            </a>${cisaBadge}
-                        </td>
-                        <td><strong>${vuln.risk_score}</strong></td>
-                        <td><span class="risk-badge risk-${vuln.risk_level}">${vuln.risk_level}</span></td>
-                        <td>${vuln.cvss_score}</td>
-                        <td>${(vuln.epss_score * 100).toFixed(2)}%</td>
-                        <td>${vuln.affected_assets.length}</td>
-                        <td class="asset-list" title="${vuln.affected_assets.join(', ')}">${assetList}${moreCount}</td>
-                    </tr>
-                `;
-                tbody.innerHTML += row;
-            });
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td><strong>#${vuln.priority_rank}</strong></td>
+                            <td>
+                                <a href="https://nvd.nist.gov/vuln/detail/${vuln.cve_id}" target="_blank" class="cve-link">
+                                    ${vuln.cve_id}
+                                </a>${cisaBadge}
+                            </td>
+                            <td><strong>${vuln.risk_score}</strong></td>
+                            <td><span class="risk-badge risk-${vuln.risk_level}">${vuln.risk_level}</span></td>
+                            <td>${vuln.cvss_score}</td>
+                            <td>${(vuln.epss_score * 100).toFixed(2)}%</td>
+                            <td>${vuln.affected_assets.length}</td>
+                            <td class="asset-list" title="${vuln.affected_assets.join(', ')}">${assetList}${moreCount}</td>
+                        `;
+                        fragment.appendChild(row);
+                    }
+                    
+                    tbody.appendChild(fragment);
+                    currentIndex = endIndex;
+                    
+                    if (currentIndex < vulnerabilities.length) {
+                        setTimeout(renderNextChunk, 10);
+                    } else {
+                        finishLoading();
+                    }
+                }
+                
+                renderNextChunk();
+            }, 50);
+        }
+
+        function finishLoading() {
+            updateProgress(100, 'Complete!');
+            
+            setTimeout(() => {
+                hideLoading();
+                
+                const content = document.getElementById('uploadContent');
+                const icon = document.getElementById('collapseIcon');
+                content.classList.add('collapsed');
+                icon.classList.add('collapsed');
+            }, 500);
         }
 
         function showAssetDetails(assetName) {
             const asset = assetData[assetName];
             if (!asset) return;
 
-            // Update modal header
             document.getElementById('modalAssetName').textContent = assetName;
 
-            // Update asset info cards
             const criticalVulns = asset.vulnerabilities.filter(v => v.risk_level === 'CRITICAL').length;
             const highVulns = asset.vulnerabilities.filter(v => v.risk_level === 'HIGH').length;
             const cisaKevVulns = asset.vulnerabilities.filter(v => v.in_cisa_kev).length;
@@ -847,31 +1037,27 @@
                 </div>
             `;
 
-            // Update vulnerabilities table
             const tbody = document.getElementById('modalVulnerabilitiesTable');
             tbody.innerHTML = '';
 
             const sortedVulns = asset.vulnerabilities.sort((a, b) => b.risk_score - a.risk_score);
             sortedVulns.forEach(vuln => {
-                const cisaBadge = vuln.in_cisa_kev ? '🚨' : '';
-                const row = `
-                    <tr>
-                        <td>
-                            <a href="https://nvd.nist.gov/vuln/detail/${vuln.cve_id}" target="_blank" class="cve-link">
-                                ${vuln.cve_id}
-                            </a> ${cisaBadge}
-                        </td>
-                        <td><strong>${vuln.risk_score}</strong></td>
-                        <td><span class="risk-badge risk-${vuln.risk_level}">${vuln.risk_level}</span></td>
-                        <td>${vuln.cvss_score}</td>
-                        <td>${(vuln.epss_score * 100).toFixed(2)}%</td>
-                        <td>${vuln.in_cisa_kev ? 'Yes' : 'No'}</td>
-                    </tr>
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <a href="https://nvd.nist.gov/vuln/detail/${vuln.cve_id}" target="_blank" class="cve-link">
+                            ${vuln.cve_id}
+                        </a>
+                    </td>
+                    <td><strong>${vuln.risk_score}</strong></td>
+                    <td><span class="risk-badge risk-${vuln.risk_level}">${vuln.risk_level}</span></td>
+                    <td>${vuln.cvss_score}</td>
+                    <td>${(vuln.epss_score * 100).toFixed(2)}%</td>
+                    <td>${vuln.in_cisa_kev ? 'Yes' : 'No'}</td>
                 `;
-                tbody.innerHTML += row;
+                tbody.appendChild(row);
             });
 
-            // Show modal
             document.getElementById('assetModal').style.display = 'block';
         }
 
@@ -879,7 +1065,6 @@
             document.getElementById('assetModal').style.display = 'none';
         }
 
-        // Close modal when clicking outside
         window.onclick = function(event) {
             const modal = document.getElementById('assetModal');
             if (event.target == modal) {
@@ -887,7 +1072,6 @@
             }
         }
 
-        // Close modal with Escape key
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 closeAssetModal();
