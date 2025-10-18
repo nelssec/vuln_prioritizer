@@ -211,7 +211,7 @@ Data Sources:
     print("Next steps:")
     print(f"  1. Review {csv_file} in Excel/spreadsheet")
     print(f"  2. Load {json_file} in vulnerability dashboard")
-    print("  3. Focus patching on CRITICAL and HIGH priority items")
+    print("  3. Focus on remediating CRITICAL and HIGH priority items (patches, eliminations, configuration changes)")
     print()
     
     critical_count = len([v for v in results if v.risk_level.value == 'CRITICAL'])
