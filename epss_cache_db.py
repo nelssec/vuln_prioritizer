@@ -270,7 +270,7 @@ if __name__ == "__main__":
     
     # Test CISA KEV
     db.cache_cisa_kev("CVE-2024-1234", "Vendor", "Product", "Test Vuln",
-                      "2024-01-01", "Test description", "Apply patch", "2024-02-01")
+                      "2024-01-01", "Test description", "Take action", "2024-02-01")
     
     is_kev = db.is_in_cisa_kev("CVE-2024-1234")
     print(f"Is in CISA KEV: {is_kev}")

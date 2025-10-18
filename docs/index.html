@@ -61,6 +61,18 @@
             font-size: 12px;
         }
 
+<<<<<<< HEAD
+=======
+        .patch-status {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+>>>>>>> 4af83e1f4f89f064f939130d094ff1a60c452afd
         .loading-overlay {
             display: none;
             position: fixed;
@@ -192,6 +204,25 @@
             display: none;
         }
 
+<<<<<<< HEAD
+=======
+        .patch-db-btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .patch-db-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(17, 153, 142, 0.4);
+        }
+
+>>>>>>> 4af83e1f4f89f064f939130d094ff1a60c452afd
         .charts-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -283,6 +314,29 @@
 
         .stat-card.medium {
             border-left-color: #f39c12;
+<<<<<<< HEAD
+=======
+        }
+
+        .stat-card.low {
+            border-left-color: #3498db;
+        }
+
+        .stat-card.kev {
+            border-left-color: #8b008b;
+        }
+
+        .stat-card.exploited {
+            border-left-color: #c0392b;
+        }
+
+        .stat-card.internet {
+            border-left-color: #16a085;
+        }
+
+        .stat-card.patches {
+            border-left-color: #27ae60;
+>>>>>>> 4af83e1f4f89f064f939130d094ff1a60c452afd
         }
 
         .stat-card.low {
@@ -643,6 +697,7 @@
             margin-bottom: 25px;
         }
 
+<<<<<<< HEAD
         
 
         
@@ -650,6 +705,29 @@
         
 
         
+=======
+        .patch-info {
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: white;
+            padding: 15px;
+            border-radius: 15px;
+            margin-top: 15px;
+        }
+
+        .patch-info h4 {
+            margin-bottom: 10px;
+        }
+
+        .patch-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .patch-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+>>>>>>> 4af83e1f4f89f064f939130d094ff1a60c452afd
     </style>
 </head>
 <body>
@@ -769,7 +847,11 @@
                                     <th>CVSS</th>
                                     <th>EPSS</th>
                                     <th>CISA KEV</th>
+<<<<<<< HEAD
                                     
+=======
+                                    <th>Patch</th>
+>>>>>>> 4af83e1f4f89f064f939130d094ff1a60c452afd
                                 </tr>
                             </thead>
                             <tbody id="modalVulnerabilitiesTable"></tbody>
@@ -812,6 +894,22 @@
 
         function hideLoading() {
             document.getElementById('loadingOverlay').classList.remove('active');
+        }
+
+        function loadPatchDatabase() {
+            // In production, this would load from a real database
+            // For demo, we'll use the sample database
+            patchDatabase = samplePatchDB;
+            document.getElementById('patchStatus').textContent = `${Object.keys(patchDatabase).length} Patches Loaded`;
+            alert(`Patch database loaded with ${Object.keys(patchDatabase).length} CVE mappings`);
+            
+            if (vulnerabilities.length > 0) {
+                if (currentView === 'patches') {
+                    renderPatchTable();
+                } else if (currentView === 'vulnerabilities') {
+                    renderCVETable();
+                }
+            }
         }
 
         document.getElementById('fileInput').addEventListener('change', function(e) {
@@ -1230,7 +1328,11 @@
                     case 4: aVal = a.exposure; bVal = b.exposure; break;
                     case 5: aVal = a.vulnerabilities.length; bVal = b.vulnerabilities.length; break;
                     case 6: aVal = a.kevCount; bVal = b.kevCount; break;
+<<<<<<< HEAD
                     
+=======
+                    case 7: aVal = a.patchableCount; bVal = b.patchableCount; break;
+>>>>>>> 4af83e1f4f89f064f939130d094ff1a60c452afd
                 }
                 
                 if (currentAssetSort.ascending) {
@@ -1250,6 +1352,7 @@
                     <td>${asset.exposure || 'N/A'}</td>
                     <td>${asset.vulnerabilities.length}</td>
                     <td>${asset.kevCount > 0 ? '<span class="cisa-kev">' + asset.kevCount + '</span>' : '0'}</td>
+<<<<<<< HEAD
                     
                 </tr>
             `).join('');
@@ -1355,6 +1458,185 @@
             currentFilter = riskLevel;
             currentSpecialFilter = null;
             
+=======
+                    <td>${asset.patchableCount > 0 ? '<span class="patch-badge">' + asset.patchableCount + '</span>' : '0'}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderCVETable() {
+            const header = document.getElementById('tableHeader');
+            header.innerHTML = `
+                <tr>
+                    <th onclick="sortCVETable(0)">CVE ID ↕</th>
+                    <th onclick="sortCVETable(1)">Risk Score ↕</th>
+                    <th onclick="sortCVETable(2)">Risk Level ↕</th>
+                    <th onclick="sortCVETable(3)">CVSS ↕</th>
+                    <th onclick="sortCVETable(4)">EPSS ↕</th>
+                    <th onclick="sortCVETable(5)">CISA KEV ↕</th>
+                    <th onclick="sortCVETable(6)">Assets ↕</th>
+                    <th onclick="sortCVETable(7)">Patch ↕</th>
+                </tr>
+            `;
+            
+            let vulnsArray = [...vulnerabilities];
+            
+            if (currentFilter) {
+                vulnsArray = vulnsArray.filter(vuln => vuln.risk_level === currentFilter);
+            }
+            
+            if (currentSpecialFilter === 'kev') {
+                vulnsArray = vulnsArray.filter(vuln => vuln.in_cisa_kev);
+            } else if (currentSpecialFilter === 'exploited') {
+                vulnsArray = vulnsArray.filter(vuln => vuln.actively_exploited || vuln.exploit_available);
+            } else if (currentSpecialFilter === 'internet') {
+                vulnsArray = vulnsArray.filter(vuln => vuln.exposure_level === 'INTERNET');
+            }
+            
+            vulnsArray.sort((a, b) => {
+                let aVal, bVal;
+                switch(currentCVESort.column) {
+                    case 0: aVal = a.cve_id; bVal = b.cve_id; break;
+                    case 1: aVal = a.risk_score; bVal = b.risk_score; break;
+                    case 2: aVal = getRiskLevelValue(a.risk_level); bVal = getRiskLevelValue(b.risk_level); break;
+                    case 3: aVal = a.cvss_score; bVal = b.cvss_score; break;
+                    case 4: aVal = a.epss_score || 0; bVal = b.epss_score || 0; break;
+                    case 5: aVal = a.in_cisa_kev ? 1 : 0; bVal = b.in_cisa_kev ? 1 : 0; break;
+                    case 6: aVal = (a.affected_assets || []).length; bVal = (b.affected_assets || []).length; break;
+                    case 7: aVal = patchDatabase[a.cve_id] ? 1 : 0; bVal = patchDatabase[b.cve_id] ? 1 : 0; break;
+                }
+                
+                if (currentCVESort.ascending) {
+                    return aVal > bVal ? 1 : -1;
+                } else {
+                    return aVal < bVal ? 1 : -1;
+                }
+            });
+            
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = vulnsArray.map(vuln => {
+                const patch = patchDatabase[vuln.cve_id];
+                return `
+                    <tr>
+                        <td><a href="https://nvd.nist.gov/vuln/detail/${vuln.cve_id}" target="_blank" class="clickable">${vuln.cve_id}</a></td>
+                        <td>${vuln.risk_score.toFixed(1)}</td>
+                        <td><span class="risk-badge risk-${vuln.risk_level.toLowerCase()}">${vuln.risk_level}</span></td>
+                        <td>${vuln.cvss_score.toFixed(1)}</td>
+                        <td>${vuln.epss_score ? (vuln.epss_score * 100).toFixed(1) + '%' : 'N/A'}</td>
+                        <td>${vuln.in_cisa_kev ? '<span class="cisa-kev">YES</span>' : '-'}</td>
+                        <td>${(vuln.affected_assets || []).length}</td>
+                        <td>${patch ? '<span class="patch-badge" title="' + patch.patches.join(', ') + '">' + patch.patches[0] + '</span>' : '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderPatchTable() {
+            const header = document.getElementById('tableHeader');
+            header.innerHTML = `
+                <tr>
+                    <th onclick="sortPatchTable(0)">Patch ID ↕</th>
+                    <th onclick="sortPatchTable(1)">CVE ID ↕</th>
+                    <th onclick="sortPatchTable(2)">Risk Score ↕</th>
+                    <th onclick="sortPatchTable(3)">Vendor ↕</th>
+                    <th onclick="sortPatchTable(4)">Product ↕</th>
+                    <th onclick="sortPatchTable(5)">Release Date ↕</th>
+                    <th onclick="sortPatchTable(6)">Assets ↕</th>
+                </tr>
+            `;
+            
+            let patchArray = [];
+            Object.entries(patchDatabase).forEach(([cveId, patchInfo]) => {
+                const vuln = vulnerabilities.find(v => v.cve_id === cveId);
+                if (vuln) {
+                    patchInfo.patches.forEach(patchId => {
+                        patchArray.push({
+                            patchId: patchId,
+                            cveId: cveId,
+                            riskScore: vuln.risk_score,
+                            riskLevel: vuln.risk_level,
+                            vendor: patchInfo.vendor,
+                            product: patchInfo.product,
+                            releaseDate: patchInfo.releaseDate,
+                            assetCount: (vuln.affected_assets || []).length
+                        });
+                    });
+                }
+            });
+            
+            patchArray.sort((a, b) => {
+                let aVal, bVal;
+                switch(currentPatchSort.column) {
+                    case 0: aVal = a.patchId; bVal = b.patchId; break;
+                    case 1: aVal = a.cveId; bVal = b.cveId; break;
+                    case 2: aVal = a.riskScore; bVal = b.riskScore; break;
+                    case 3: aVal = a.vendor; bVal = b.vendor; break;
+                    case 4: aVal = a.product; bVal = b.product; break;
+                    case 5: aVal = a.releaseDate; bVal = b.releaseDate; break;
+                    case 6: aVal = a.assetCount; bVal = b.assetCount; break;
+                }
+                
+                if (currentPatchSort.ascending) {
+                    return aVal > bVal ? 1 : -1;
+                } else {
+                    return aVal < bVal ? 1 : -1;
+                }
+            });
+            
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = patchArray.map(patch => `
+                <tr>
+                    <td><span class="patch-badge">${patch.patchId}</span></td>
+                    <td><a href="https://nvd.nist.gov/vuln/detail/${patch.cveId}" target="_blank" class="clickable">${patch.cveId}</a></td>
+                    <td>${patch.riskScore.toFixed(1)}</td>
+                    <td>${patch.vendor}</td>
+                    <td>${patch.product}</td>
+                    <td>${patch.releaseDate}</td>
+                    <td>${patch.assetCount}</td>
+                </tr>
+            `).join('');
+        }
+
+        function getRiskLevelValue(level) {
+            const values = { CRITICAL: 5, HIGH: 4, MEDIUM: 3, LOW: 2, MINIMAL: 1 };
+            return values[level] || 0;
+        }
+
+        function sortAssetTable(column) {
+            if (currentAssetSort.column === column) {
+                currentAssetSort.ascending = !currentAssetSort.ascending;
+            } else {
+                currentAssetSort.column = column;
+                currentAssetSort.ascending = true;
+            }
+            renderAssetsTable();
+        }
+
+        function sortCVETable(column) {
+            if (currentCVESort.column === column) {
+                currentCVESort.ascending = !currentCVESort.ascending;
+            } else {
+                currentCVESort.column = column;
+                currentCVESort.ascending = true;
+            }
+            renderCVETable();
+        }
+
+        function sortPatchTable(column) {
+            if (currentPatchSort.column === column) {
+                currentPatchSort.ascending = !currentPatchSort.ascending;
+            } else {
+                currentPatchSort.column = column;
+                currentPatchSort.ascending = true;
+            }
+            renderPatchTable();
+        }
+
+        function filterByRisk(riskLevel) {
+            currentFilter = riskLevel;
+            currentSpecialFilter = null;
+            
+>>>>>>> 4af83e1f4f89f064f939130d094ff1a60c452afd
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
@@ -1442,13 +1724,49 @@
             
             document.getElementById('modalAssetInfo').innerHTML = infoHtml;
             
+<<<<<<< HEAD
             // Patches info removed
             document.getElementById('assetPatchInfo').innerHTML = '';
+=======
+            // Show patches needed
+            const patchesNeeded = {};
+            asset.vulnerabilities.forEach(vuln => {
+                if (patchDatabase[vuln.cve_id]) {
+                    const patchInfo = patchDatabase[vuln.cve_id];
+                    patchInfo.patches.forEach(patch => {
+                        if (!patchesNeeded[patch]) {
+                            patchesNeeded[patch] = [];
+                        }
+                        patchesNeeded[patch].push(vuln.cve_id);
+                    });
+                }
+            });
+            
+            if (Object.keys(patchesNeeded).length > 0) {
+                const patchHtml = `
+                    <div class="patch-info">
+                        <h4>Patches Required</h4>
+                        <ul class="patch-list">
+                            ${Object.entries(patchesNeeded).map(([patch, cves]) => 
+                                `<li>${patch} - Fixes ${cves.length} CVE(s)</li>`
+                            ).join('')}
+                        </ul>
+                    </div>
+                `;
+                document.getElementById('assetPatchInfo').innerHTML = patchHtml;
+            } else {
+                document.getElementById('assetPatchInfo').innerHTML = '';
+            }
+>>>>>>> 4af83e1f4f89f064f939130d094ff1a60c452afd
             
             const vulnTableHtml = asset.vulnerabilities
                 .sort((a, b) => b.risk_score - a.risk_score)
                 .map(vuln => {
+<<<<<<< HEAD
                     
+=======
+                    const patch = patchDatabase[vuln.cve_id];
+>>>>>>> 4af83e1f4f89f064f939130d094ff1a60c452afd
                     return `
                         <tr>
                             <td><a href="https://nvd.nist.gov/vuln/detail/${vuln.cve_id}" target="_blank" class="clickable">${vuln.cve_id}</a></td>
@@ -1457,7 +1775,11 @@
                             <td>${vuln.cvss_score.toFixed(1)}</td>
                             <td>${vuln.epss_score ? (vuln.epss_score * 100).toFixed(1) + '%' : 'N/A'}</td>
                             <td>${vuln.in_cisa_kev ? '<span class="cisa-kev">YES</span>' : '-'}</td>
+<<<<<<< HEAD
                             
+=======
+                            <td>${patch ? '<span class="patch-badge">' + patch.patches[0] + '</span>' : '-'}</td>
+>>>>>>> 4af83e1f4f89f064f939130d094ff1a60c452afd
                         </tr>
                     `;
                 }).join('');
@@ -1475,14 +1797,22 @@
             let filename = '';
             
             if (currentView === 'assets') {
+<<<<<<< HEAD
                 csvContent = 'Asset Name,Max Risk Score,Avg Risk Score,Risk Level,Criticality,Exposure,Sensitivity,CVE Count,CISA KEV\n';
                 
                 Object.values(assetData).forEach(asset => {
                     csvContent += `"${asset.name}",${asset.maxRiskScore.toFixed(1)},${asset.avgRiskScore.toFixed(1)},${asset.riskLevel},${asset.criticality || 'N/A'},${asset.exposure || 'N/A'},${asset.sensitivity || 'N/A'},${asset.vulnerabilities.length},${asset.kevCount}\n`;
+=======
+                csvContent = 'Asset Name,Max Risk Score,Avg Risk Score,Risk Level,Criticality,Exposure,Sensitivity,CVE Count,CISA KEV,Patchable\n';
+                
+                Object.values(assetData).forEach(asset => {
+                    csvContent += `"${asset.name}",${asset.maxRiskScore.toFixed(1)},${asset.avgRiskScore.toFixed(1)},${asset.riskLevel},${asset.criticality || 'N/A'},${asset.exposure || 'N/A'},${asset.sensitivity || 'N/A'},${asset.vulnerabilities.length},${asset.kevCount},${asset.patchableCount}\n`;
+>>>>>>> 4af83e1f4f89f064f939130d094ff1a60c452afd
                 });
                 
                 filename = 'asset_risk_report.csv';
             } else if (currentView === 'vulnerabilities') {
+<<<<<<< HEAD
                 csvContent = 'CVE ID,Risk Score,Risk Level,CVSS,EPSS,CISA KEV,Asset Count,Description\n';
                 
                 vulnerabilities.forEach(vuln => {
@@ -1492,6 +1822,29 @@
                 
                 filename = 'vulnerability_report.csv';
             
+=======
+                csvContent = 'CVE ID,Risk Score,Risk Level,CVSS,EPSS,CISA KEV,Asset Count,Patch Available,Description\n';
+                
+                vulnerabilities.forEach(vuln => {
+                    const patchAvailable = patchDatabase[vuln.cve_id] ? 'Yes' : 'No';
+                    csvContent += `${vuln.cve_id},${vuln.risk_score.toFixed(1)},${vuln.risk_level},${vuln.cvss_score.toFixed(1)},${vuln.epss_score ? (vuln.epss_score * 100).toFixed(1) + '%' : 'N/A'},${vuln.in_cisa_kev ? 'YES' : 'NO'},${(vuln.affected_assets || []).length},${patchAvailable},"${vuln.description || ''}"\n`;
+                });
+                
+                filename = 'vulnerability_report.csv';
+            } else if (currentView === 'patches') {
+                csvContent = 'Patch ID,CVE ID,Risk Score,Vendor,Product,Release Date,Affected Assets\n';
+                
+                Object.entries(patchDatabase).forEach(([cveId, patchInfo]) => {
+                    const vuln = vulnerabilities.find(v => v.cve_id === cveId);
+                    if (vuln) {
+                        patchInfo.patches.forEach(patchId => {
+                            csvContent += `${patchId},${cveId},${vuln.risk_score.toFixed(1)},${patchInfo.vendor},${patchInfo.product},${patchInfo.releaseDate},${(vuln.affected_assets || []).length}\n`;
+                        });
+                    }
+                });
+                
+                filename = 'patch_report.csv';
+>>>>>>> 4af83e1f4f89f064f939130d094ff1a60c452afd
             }
             
             const blob = new Blob([csvContent], { type: 'text/csv' });
