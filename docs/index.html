@@ -1005,9 +1005,19 @@
         }
 
         function displayStats() {
+            updateStatsDisplay();
+            
+            setTimeout(() => {
+                updateProgress(100, 'Complete!');
+                setTimeout(hideLoading, 500);
+            }, 100);
+        }
+
+        function updateStatsDisplay() {
             const statsGrid = document.getElementById('statsGrid');
             
-            const riskCounts = {
+            // Calculate CVE risk counts
+            const cveRiskCounts = {
                 CRITICAL: 0,
                 HIGH: 0,
                 MEDIUM: 0,
@@ -1016,8 +1026,25 @@
             };
 
             vulnerabilities.forEach(vuln => {
-                riskCounts[vuln.risk_level] = (riskCounts[vuln.risk_level] || 0) + 1;
+                cveRiskCounts[vuln.risk_level] = (cveRiskCounts[vuln.risk_level] || 0) + 1;
             });
+
+            // Calculate Asset risk counts
+            const assetRiskCounts = {
+                CRITICAL: 0,
+                HIGH: 0,
+                MEDIUM: 0,
+                LOW: 0,
+                MINIMAL: 0
+            };
+
+            Object.values(assetData).forEach(asset => {
+                assetRiskCounts[asset.riskLevel] = (assetRiskCounts[asset.riskLevel] || 0) + 1;
+            });
+
+            // Use the appropriate counts based on current view
+            const riskCounts = currentView === 'assets' ? assetRiskCounts : cveRiskCounts;
+            const itemType = currentView === 'assets' ? 'Assets' : 'CVEs';
 
             const cisaKevCount = vulnerabilities.filter(v => v.in_cisa_kev).length;
             const exploitedCount = vulnerabilities.filter(v => v.actively_exploited || v.exploit_available).length;
@@ -1031,12 +1058,12 @@
             statsGrid.innerHTML = `
                 <div class="stat-card critical" onclick="filterByRisk('CRITICAL')">
                     <div class="stat-value">${riskCounts.CRITICAL}</div>
-                    <div class="stat-label">Critical Risk</div>
+                    <div class="stat-label">Critical Risk ${itemType}</div>
                     <div class="stat-sublabel">Immediate action</div>
                 </div>
                 <div class="stat-card high" onclick="filterByRisk('HIGH')">
                     <div class="stat-value">${riskCounts.HIGH}</div>
-                    <div class="stat-label">High Risk</div>
+                    <div class="stat-label">High Risk ${itemType}</div>
                     <div class="stat-sublabel">Urgent priority</div>
                 </div>
                 <div class="stat-card kev" onclick="filterBySpecial('kev')">
@@ -1066,15 +1093,10 @@
                 </div>
                 <div class="stat-card medium" onclick="filterByRisk('MEDIUM')">
                     <div class="stat-value">${riskCounts.MEDIUM}</div>
-                    <div class="stat-label">Medium Risk</div>
+                    <div class="stat-label">Medium Risk ${itemType}</div>
                     <div class="stat-sublabel">Standard priority</div>
                 </div>
             `;
-            
-            setTimeout(() => {
-                updateProgress(100, 'Complete!');
-                setTimeout(hideLoading, 500);
-            }, 100);
         }
 
         function renderCharts() {
@@ -1208,6 +1230,9 @@
                 btn.classList.remove('active');
             });
             document.querySelectorAll('.filter-btn')[0].classList.add('active');
+            
+            // Update the stats display to show the correct counts
+            updateStatsDisplay();
             
             if (view === 'assets') {
                 renderAssetsTable();
