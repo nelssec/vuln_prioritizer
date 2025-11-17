@@ -1315,8 +1315,8 @@
                     <th onclick="sortCVETable(3)">CVSS ↕</th>
                     <th onclick="sortCVETable(4)">EPSS ↕</th>
                     <th onclick="sortCVETable(5)">CISA KEV ↕</th>
-                    <th onclick="sortCVETable(6)">Assets ↕</th>
-                    <th onclick="sortCVETable(7)">Patch ↕</th>
+                    <th onclick="sortCVETable(6)">Business Unit ↕</th>
+                    <th onclick="sortCVETable(7)">Assets ↕</th>
                 </tr>
             `;
             
@@ -1343,10 +1343,10 @@
                     case 3: aVal = a.cvss_score; bVal = b.cvss_score; break;
                     case 4: aVal = a.epss_score || 0; bVal = b.epss_score || 0; break;
                     case 5: aVal = a.in_cisa_kev ? 1 : 0; bVal = b.in_cisa_kev ? 1 : 0; break;
-                    case 6: aVal = (a.affected_assets || []).length; bVal = (b.affected_assets || []).length; break;
-                    
+                    case 6: aVal = a.business_unit || ''; bVal = b.business_unit || ''; break;
+                    case 7: aVal = (a.affected_assets || []).length; bVal = (b.affected_assets || []).length; break;
                 }
-                
+
                 if (currentCVESort.ascending) {
                     return aVal > bVal ? 1 : -1;
                 } else {
@@ -1356,7 +1356,9 @@
             
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = vulnsArray.map(vuln => {
-                
+                const businessUnit = vuln.business_unit || '-';
+                const businessUnitDisplay = businessUnit.length > 30 ? businessUnit.substring(0, 30) + '...' : businessUnit;
+
                 return `
                     <tr>
                         <td><a href="https://nvd.nist.gov/vuln/detail/${vuln.cve_id}" target="_blank" class="clickable">${vuln.cve_id}</a></td>
@@ -1365,8 +1367,8 @@
                         <td>${vuln.cvss_score.toFixed(1)}</td>
                         <td>${vuln.epss_score ? (vuln.epss_score * 100).toFixed(1) + '%' : 'N/A'}</td>
                         <td>${vuln.in_cisa_kev ? '<span class="cisa-kev">YES</span>' : '-'}</td>
+                        <td title="${businessUnit}">${businessUnitDisplay}</td>
                         <td>${(vuln.affected_assets || []).length}</td>
-                        
                     </tr>
                 `;
             }).join('');
@@ -1532,15 +1534,16 @@
                 
                 filename = 'asset_risk_report.csv';
             } else if (currentView === 'vulnerabilities') {
-                csvContent = 'CVE ID,Risk Score,Risk Level,CVSS,EPSS,CISA KEV,Asset Count,Description\n';
-                
+                csvContent = 'CVE ID,Risk Score,Risk Level,CVSS,EPSS,CISA KEV,Business Unit,Asset Tags,Asset Count,Description\n';
+
                 vulnerabilities.forEach(vuln => {
-                    
-                    csvContent += `${vuln.cve_id},${vuln.risk_score.toFixed(1)},${vuln.risk_level},${vuln.cvss_score.toFixed(1)},${vuln.epss_score ? (vuln.epss_score * 100).toFixed(1) + '%' : 'N/A'},${vuln.in_cisa_kev ? 'YES' : 'NO'},${(vuln.affected_assets || []).length},"${vuln.description || ''}"\n`;
+                    const businessUnit = vuln.business_unit || '';
+                    const assetTags = (vuln.asset_tags || []).join('|');
+                    csvContent += `${vuln.cve_id},${vuln.risk_score.toFixed(1)},${vuln.risk_level},${vuln.cvss_score.toFixed(1)},${vuln.epss_score ? (vuln.epss_score * 100).toFixed(1) + '%' : 'N/A'},${vuln.in_cisa_kev ? 'YES' : 'NO'},"${businessUnit}","${assetTags}",${(vuln.affected_assets || []).length},"${vuln.description || ''}"\n`;
                 });
-                
+
                 filename = 'vulnerability_report.csv';
-            
+
             }
             
             const blob = new Blob([csvContent], { type: 'text/csv' });

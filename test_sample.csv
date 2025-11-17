@@ -1,0 +1,11 @@
+CVE,Host,CVSS v3.0 Base Score,Severity,Business Unit,Asset Tags,Asset Criticality,Owner
+CVE-2024-1234,web-prod-server-01,9.8,Critical,Engineering,Production|Web,5,security-team
+CVE-2024-5678,db-prod-cluster-02,8.5,High,Finance,Production|Database|Payment,5,finance-it
+CVE-2024-9012,app-staging-server,7.2,High,Engineering,Staging|Application,3,dev-team
+CVE-2024-3456,internal-workstation-45,5.5,Medium,HR,Internal|Desktop,2,hr-it
+CVE-2024-7890,dmz-gateway-01,9.1,Critical,Operations,DMZ|Internet|Gateway,5,netops
+CVE-2023-1111,test-server-12,4.3,Medium,Engineering,Test|Development,1,qa-team
+CVE-2024-2222,customer-portal-03,8.8,High,Sales,Production|Web|Customer,4,sales-ops
+CVE-2024-3333,backup-system-main,6.5,Medium,IT,Internal|Backup,3,backup-admin
+CVE-2024-4444,api-prod-gateway,9.5,Critical,Engineering,Production|API|Internet,5,api-team
+CVE-2024-5555,vpn-concentrator,7.8,High,Operations,VPN|Extranet,4,netops
