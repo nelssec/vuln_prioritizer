@@ -17,6 +17,9 @@ epss_cache.db
 # Test outputs
 test_prioritized.json
 *_prioritized.json
+*_prioritized.csv
+*_prioritized_splunk.json
+*_prioritized_elastic.json
 
 # IDE files
 .vscode/
