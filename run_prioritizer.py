@@ -4,13 +4,13 @@ import sys
 import os
 import argparse
 
+
 def main():
-    print("="*70)
+    print("=" * 70)
     print(" VULNERABILITY PRIORITIZATION SYSTEM")
-    print("="*70)
+    print("=" * 70)
     print()
-    
-    # Parse command line arguments
+
     parser = argparse.ArgumentParser(
         description='Vulnerability Prioritization System',
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -20,63 +20,93 @@ Examples:
   python3 run_prioritizer.py --source tenable tenable_export.nessus
   python3 run_prioritizer.py --source qualys qualys_scan.csv
   python3 run_prioritizer.py --source qualys --no-cache qualys_scan.csv
+  python3 run_prioritizer.py --source openvas openvas_scan.csv
+  python3 run_prioritizer.py --source rapid7 rapid7_export.csv
+  python3 run_prioritizer.py --source blackduck blackduck_report.csv
+  python3 run_prioritizer.py --source qualys --profile cloud_workload scan.csv
+  python3 run_prioritizer.py --source nessus --output-format splunk scan.nessus
 
 Data Sources:
-  nessus   - Nessus .nessus XML format
-  tenable  - Tenable .nessus XML format
-  qualys   - Qualys CSV or XML format
+  nessus    - Nessus .nessus XML format
+  tenable   - Tenable .nessus XML format
+  qualys    - Qualys CSV or XML format
+  openvas   - OpenVAS CSV or XML format
+  rapid7    - Rapid7 InsightVM/Nexpose CSV format
+  blackduck - BlackDuck SCA CSV format
+
+Scoring Profiles:
+  default        - Balanced weights
+  cloud_workload - EPSS-heavy for cloud environments
+  onprem_server  - CVSS-heavy for on-premises servers
+  oss_library    - Includes patch_available weight for SCA
+
+Output Formats:
+  json    - Standard JSON (default)
+  splunk  - Splunk HEC-compatible NDJSON
+  elastic - Elastic ECS-compatible bulk format
         '''
     )
-    
+
     parser.add_argument(
         '--source',
-        choices=['nessus', 'tenable', 'qualys'],
+        choices=['nessus', 'tenable', 'qualys', 'openvas', 'rapid7', 'blackduck'],
         default='qualys',
         help='Data source type (default: qualys)'
     )
-    
+
     parser.add_argument(
         'input_file',
         nargs='?',
         help='Input scan file'
     )
-    
+
     parser.add_argument(
         '--no-cache',
         action='store_true',
         help='Disable database caching'
     )
-    
+
     parser.add_argument(
         '--cache-db',
         default='epss_cache.db',
         help='Path to cache database (default: epss_cache.db)'
     )
-    
+
     parser.add_argument(
         '--output-prefix',
         help='Output file prefix (default: based on input filename)'
     )
-    
+
     parser.add_argument(
         '--top-n',
         type=int,
         default=20,
         help='Number of top vulnerabilities to display (default: 20)'
     )
-    
+
     parser.add_argument(
         '--config',
         default='prioritizer_config.json',
         help='Configuration file path (default: prioritizer_config.json)'
     )
-    
+
+    parser.add_argument(
+        '--profile',
+        choices=['default', 'cloud_workload', 'onprem_server', 'oss_library'],
+        default='default',
+        help='Scoring profile (default: default)'
+    )
+
+    parser.add_argument(
+        '--output-format',
+        choices=['json', 'splunk', 'elastic'],
+        default='json',
+        help='Output format (default: json)'
+    )
+
     args = parser.parse_args()
-    
-    # Determine input file
-    if args.input_file:
-        input_file = args.input_file
-    else:
+
+    if not args.input_file:
         print("[ERROR] No input file specified")
         print()
         print("Usage:")
@@ -84,21 +114,23 @@ Data Sources:
         print()
         parser.print_help()
         return 1
-    
+
+    input_file = args.input_file
+
     if not os.path.exists(input_file):
         print(f"[ERROR] Input file not found: {input_file}")
         return 1
-    
+
     print(f"[INPUT] File: {input_file}")
     print(f"[SOURCE] Type: {args.source}")
     print(f"[CACHE] Database: {args.cache_db} (enabled: {not args.no_cache})")
     print(f"[CONFIG] File: {args.config}")
+    print(f"[PROFILE] Scoring: {args.profile}")
+    print(f"[FORMAT] Output: {args.output_format}")
     print()
-    
-    # Import prioritizer
+
     from vulnerability_prioritizer import VulnerabilityPrioritizer, DataSource
-    
-    # Initialize
+
     print("[INFO] Initializing prioritizer...")
     prioritizer = VulnerabilityPrioritizer(
         config_file=args.config,
@@ -106,122 +138,129 @@ Data Sources:
         cache_db_path=args.cache_db
     )
     print()
-    
-    # Import vulnerabilities based on source
+
     print(f"[INFO] Importing vulnerabilities from {args.source} source...")
-    
-    if args.source == 'nessus':
-        vulns = prioritizer.import_nessus(input_file)
-    elif args.source == 'tenable':
-        vulns = prioritizer.import_tenable(input_file)
-    elif args.source == 'qualys':
-        vulns = prioritizer.import_qualys(input_file)
-    else:
+
+    import_methods = {
+        'nessus': prioritizer.import_nessus,
+        'tenable': prioritizer.import_tenable,
+        'qualys': prioritizer.import_qualys,
+        'openvas': prioritizer.import_openvas,
+        'rapid7': prioritizer.import_rapid7,
+        'blackduck': prioritizer.import_blackduck,
+    }
+
+    import_fn = import_methods.get(args.source)
+    if not import_fn:
         print(f"[ERROR] Unsupported source: {args.source}")
         return 1
-    
+
+    vulns = import_fn(input_file)
+
     if not vulns:
         print("[ERROR] No vulnerabilities found in scan")
         return 1
-    
+
     print()
-    
-    # Prioritize
+
     print("[INFO] Prioritizing vulnerabilities...")
     results = prioritizer.prioritize_vulnerabilities(vulns)
     print()
-    
+
     # Determine output filenames
     if args.output_prefix:
         base_name = args.output_prefix
     else:
         base_name = os.path.splitext(input_file)[0]
-    
+
     csv_file = f"{base_name}_prioritized.csv"
-    json_file = f"{base_name}_prioritized.json"
-    
-    # Export
     prioritizer.export_to_csv(results, csv_file)
-    prioritizer.export_to_json(results, json_file)
+
+    # Export in selected format
+    format_exporters = {
+        'json': (f"{base_name}_prioritized.json", prioritizer.export_to_json),
+        'splunk': (f"{base_name}_prioritized_splunk.json", prioritizer.export_to_splunk),
+        'elastic': (f"{base_name}_prioritized_elastic.json", prioritizer.export_to_elastic),
+    }
+    out_file, export_fn = format_exporters[args.output_format]
+    export_fn(results, out_file)
     print()
-    
+
     # Generate report
-    print("="*70)
+    print("=" * 70)
     print(" PRIORITIZATION REPORT")
-    print("="*70)
+    print("=" * 70)
     print()
     report = prioritizer.generate_report(results, top_n=args.top_n)
     print(report)
-    
+
     # Statistics
     epss_scores = [v.epss_score for v in results if v.epss_score and v.epss_score > 0]
     cisa_kev_count = len([v for v in results if v.in_cisa_kev])
-    
+
     print()
-    print("="*70)
+    print("=" * 70)
     print(" THREAT INTELLIGENCE SUMMARY")
-    print("="*70)
+    print("=" * 70)
     print()
     print(f"Total Unique CVEs: {len(results)}")
     print(f"CVEs with EPSS scores: {len(epss_scores)}/{len(results)} ({len(epss_scores)/len(results)*100:.1f}%)")
     print(f"CVEs in CISA KEV: {cisa_kev_count} ({cisa_kev_count/len(results)*100:.1f}%)")
-    
+
     if epss_scores:
         print()
         print(f"EPSS Score Statistics:")
         print(f"  Average: {sum(epss_scores)/len(epss_scores):.4f} ({sum(epss_scores)/len(epss_scores)*100:.2f}%)")
         print(f"  Maximum: {max(epss_scores):.4f} ({max(epss_scores)*100:.2f}%)")
         print(f"  Median:  {sorted(epss_scores)[len(epss_scores)//2]:.4f}")
-        
+
         print()
         print("Exploitation Probability Distribution:")
         print(f"  Very High (>50%):  {len([s for s in epss_scores if s > 0.5])} CVEs")
         print(f"  High (10-50%):     {len([s for s in epss_scores if 0.1 < s <= 0.5])} CVEs")
         print(f"  Medium (1-10%):    {len([s for s in epss_scores if 0.01 < s <= 0.1])} CVEs")
         print(f"  Low (<1%):         {len([s for s in epss_scores if 0 < s <= 0.01])} CVEs")
-    
+
     print()
     print("Risk Level Distribution:")
     for level in ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'MINIMAL']:
         count = len([v for v in results if v.risk_level.value == level])
-        pct = (count/len(results)*100) if results else 0
+        pct = (count / len(results) * 100) if results else 0
         print(f"  {level:8s}: {count:3d} ({pct:5.1f}%)")
-    
-    # Asset criticality distribution
+
     print()
     print("Asset Criticality Distribution:")
     for crit in ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', 'MINIMAL']:
         count = len([v for v in results if v.asset_criticality.name == crit])
-        pct = (count/len(results)*100) if results else 0
+        pct = (count / len(results) * 100) if results else 0
         if count > 0:
             print(f"  {crit:8s}: {count:3d} ({pct:5.1f}%)")
-    
-    # Cache statistics
+
     if not args.no_cache:
         prioritizer.print_cache_stats()
-    
+
     print()
-    print("="*70)
+    print("=" * 70)
     print(" OUTPUT FILES")
-    print("="*70)
+    print("=" * 70)
     print()
     print(f"[CSV]  {csv_file}")
-    print(f"[JSON] {json_file}")
+    print(f"[{args.output_format.upper()}]  {out_file}")
     print()
     print("Next steps:")
     print(f"  1. Review {csv_file} in Excel/spreadsheet")
-    print(f"  2. Load {json_file} in vulnerability dashboard")
-    print("  3. Focus on remediating CRITICAL and HIGH priority items (patches, eliminations, configuration changes)")
+    print(f"  2. Load {out_file} in vulnerability dashboard")
+    print("  3. Focus on remediating CRITICAL and HIGH priority items")
     print()
-    
+
     critical_count = len([v for v in results if v.risk_level.value == 'CRITICAL'])
     if critical_count > 0:
-        print("[WARNING] {} CRITICAL vulnerabilities requiring immediate action".format(critical_count))
+        print(f"[WARNING] {critical_count} CRITICAL vulnerabilities requiring immediate action")
         print()
-    
+
     print("[SUCCESS] PRIORITIZATION COMPLETE")
     print()
-    
+
     return 0
 
 

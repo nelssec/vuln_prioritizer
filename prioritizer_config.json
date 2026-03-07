@@ -38,10 +38,59 @@
     "epss_cache_days": 7,
     "kev_cache_days": 1
   },
+  "cache_ttls": {
+    "epss": 7,
+    "cisa_kev": 1,
+    "nvd": 7,
+    "osv": 3,
+    "vulners": 3,
+    "exploitdb": 7
+  },
   "critical_override_conditions": {
     "min_cvss_for_override": 7.0,
     "min_epss_for_override": 0.5,
     "require_cisa_kev": true,
     "critical_asset_auto_promote": true
+  },
+  "connectors": {
+    "scanners": {
+      "nessus": "connectors.scanners.nessus.NessusConnector",
+      "qualys_csv": "connectors.scanners.qualys_csv.QualysCSVConnector",
+      "qualys_xml": "connectors.scanners.qualys_xml.QualysXMLConnector",
+      "openvas": "connectors.scanners.openvas.OpenVASConnector",
+      "rapid7": "connectors.scanners.rapid7.Rapid7Connector",
+      "blackduck": "connectors.scanners.blackduck.BlackDuckConnector"
+    },
+    "threat_intel": [
+      "connectors.threat_intel.epss.EPSSProvider",
+      "connectors.threat_intel.cisa_kev.CISAKEVProvider"
+    ]
+  },
+  "scoring_profiles": {
+    "default": {
+      "cvss": 0.30,
+      "epss": 0.25,
+      "kev": 0.20,
+      "exploit": 0.25
+    },
+    "cloud_workload": {
+      "cvss": 0.25,
+      "epss": 0.30,
+      "kev": 0.20,
+      "exploit": 0.25
+    },
+    "onprem_server": {
+      "cvss": 0.30,
+      "epss": 0.25,
+      "kev": 0.20,
+      "exploit": 0.25
+    },
+    "oss_library": {
+      "cvss": 0.20,
+      "epss": 0.20,
+      "kev": 0.15,
+      "exploit": 0.20,
+      "patch_available": 0.25
+    }
   }
 }
