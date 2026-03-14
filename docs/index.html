@@ -1,11 +1,44 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vulnerability Prioritization Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        :root {
+            --bg-primary: #0f1117;
+            --bg-surface: #161b22;
+            --bg-surface-alt: #1c2128;
+            --bg-hover: #21262d;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --border-color: rgba(255,255,255,0.08);
+            --accent: #00b4d8;
+            --accent-hover: #0096b7;
+            --critical: #ef4444;
+            --high: #f97316;
+            --medium: #f59e0b;
+            --low: #22c55e;
+            --kev: #a855f7;
+            --exploited: #ef4444;
+            --internet: #06b6d4;
+            --radius: 8px;
+            --radius-lg: 12px;
+        }
+
+        [data-theme="light"] {
+            --bg-primary: #f0f2f5;
+            --bg-surface: #ffffff;
+            --bg-surface-alt: #f8f9fa;
+            --bg-hover: #eef1f5;
+            --text-primary: #1a1a2e;
+            --text-secondary: #5a6270;
+            --text-muted: #8b949e;
+            --border-color: rgba(0,0,0,0.1);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -14,60 +47,70 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--bg-primary);
+            color: var(--text-primary);
             min-height: 100vh;
-            padding: 20px;
+            padding: 16px;
+            font-size: 13px;
+            line-height: 1.4;
         }
 
         .container {
             max-width: 1600px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 30px;
-            backdrop-filter: blur(10px);
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            padding: 24px;
         }
 
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
         }
 
         h1 {
-            color: #2c3e50;
-            font-size: 32px;
-            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
         }
 
         .subtitle {
-            color: #7f8c8d;
-            margin-top: 5px;
-            font-size: 14px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            font-size: 13px;
         }
 
         .header-stats {
             display: flex;
-            gap: 20px;
+            gap: 16px;
             align-items: center;
         }
 
         .last-updated {
-            color: #7f8c8d;
+            color: var(--text-muted);
             font-size: 12px;
         }
 
-        .patch-status {
-            padding: 8px 16px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
+        .theme-toggle {
+            background: var(--bg-surface-alt);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 6px 12px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .theme-toggle:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
         }
 
         .loading-overlay {
@@ -77,7 +120,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.85);
             z-index: 9999;
             justify-content: center;
             align-items: center;
@@ -89,21 +132,25 @@
         }
 
         .loading-content {
-            background: white;
-            padding: 40px;
-            border-radius: 15px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            padding: 32px;
+            border-radius: var(--radius-lg);
             text-align: center;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            max-width: 450px;
+            max-width: 420px;
             width: 90%;
         }
 
+        .loading-content h3 {
+            color: var(--text-primary);
+        }
+
         .spinner {
-            width: 60px;
-            height: 60px;
-            margin: 0 auto 20px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 16px;
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--accent);
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -114,51 +161,56 @@
         }
 
         .progress-bar-container {
-            background: #f0f0f0;
-            height: 30px;
-            border-radius: 15px;
+            background: var(--bg-surface-alt);
+            height: 24px;
+            border-radius: var(--radius);
             overflow: hidden;
-            margin: 20px 0 10px;
+            margin: 16px 0 8px;
         }
 
         .progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
+            background: var(--accent);
             transition: width 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-weight: bold;
-            font-size: 14px;
+            font-weight: 600;
+            font-size: 12px;
         }
 
         .upload-section {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            padding: 25px;
-            border-radius: 15px;
-            margin-bottom: 30px;
-            border: 2px dashed #667eea;
+            background: var(--bg-surface-alt);
+            padding: 20px;
+            border-radius: var(--radius-lg);
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+            transition: border-color 0.2s;
+        }
+
+        .upload-section:hover {
+            border: 1px dashed var(--accent);
         }
 
         .upload-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 12px;
             cursor: pointer;
         }
 
         .upload-header h2 {
-            font-size: 20px;
-            color: #2c3e50;
+            font-size: 15px;
+            color: var(--text-primary);
             font-weight: 600;
         }
 
         .collapse-icon {
             transition: transform 0.3s;
-            font-size: 20px;
-            color: #667eea;
+            font-size: 16px;
+            color: var(--text-secondary);
         }
 
         .collapse-icon.collapsed {
@@ -178,23 +230,23 @@
         .file-input-container {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 16px;
         }
 
         .file-input-label {
             display: inline-block;
-            padding: 12px 30px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 8px 20px;
+            background: var(--accent);
             color: white;
-            border-radius: 25px;
+            border-radius: var(--radius);
             cursor: pointer;
-            transition: transform 0.3s, box-shadow 0.3s;
+            transition: background 0.2s;
             font-weight: 600;
+            font-size: 13px;
         }
 
         .file-input-label:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            background: var(--accent-hover);
         }
 
         .file-input {
@@ -202,34 +254,34 @@
         }
 
         .patch-db-btn {
-            padding: 12px 25px;
-            background: linear-gradient(135deg, #11998e, #38ef7d);
+            padding: 8px 20px;
+            background: var(--low);
             color: white;
             border: none;
-            border-radius: 25px;
+            border-radius: var(--radius);
             cursor: pointer;
             font-weight: 600;
-            transition: transform 0.3s, box-shadow 0.3s;
+            font-size: 13px;
+            transition: opacity 0.2s;
         }
 
         .patch-db-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(17, 153, 142, 0.4);
+            opacity: 0.85;
         }
 
         .charts-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 25px;
-            margin-bottom: 30px;
+            gap: 20px;
+            margin-bottom: 24px;
             height: 300px;
         }
 
         .chart-container {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            background: var(--bg-surface-alt);
+            padding: 16px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
             height: 100%;
@@ -237,10 +289,10 @@
         }
 
         .chart-title {
-            font-size: 18px;
+            font-size: 14px;
             font-weight: 600;
-            color: #2c3e50;
-            margin-bottom: 15px;
+            color: var(--text-primary);
+            margin-bottom: 12px;
             flex-shrink: 0;
         }
 
@@ -255,7 +307,6 @@
                 grid-template-columns: 1fr;
                 height: auto;
             }
-            
             .chart-container {
                 height: 300px;
             }
@@ -263,14 +314,12 @@
 
         @media (max-width: 768px) {
             .charts-grid {
-                gap: 15px;
+                gap: 12px;
             }
-            
             .chart-container {
                 height: 250px;
-                padding: 15px;
+                padding: 12px;
             }
-            
             .stats-grid {
                 grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             }
@@ -278,154 +327,137 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
         }
 
         .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            background: var(--bg-surface-alt);
+            padding: 16px;
+            border-radius: var(--radius);
             cursor: pointer;
-            transition: transform 0.3s, box-shadow 0.3s;
-            border-left: 4px solid;
+            transition: background 0.2s;
+            border: 1px solid var(--border-color);
         }
 
         .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+            background: var(--bg-hover);
         }
 
-        .stat-card.critical {
-            border-left-color: #e74c3c;
-        }
-
-        .stat-card.high {
-            border-left-color: #e67e22;
-        }
-
-        .stat-card.medium {
-            border-left-color: #f39c12;
-        }
-
-        .stat-card.low {
-            border-left-color: #3498db;
-        }
-
-        .stat-card.kev {
-            border-left-color: #8b008b;
-        }
-
-        .stat-card.exploited {
-            border-left-color: #c0392b;
-        }
-
-        .stat-card.internet {
-            border-left-color: #16a085;
-        }
-
-        
+        .stat-card.critical { border-left: 3px solid var(--critical); }
+        .stat-card.high { border-left: 3px solid var(--high); }
+        .stat-card.medium { border-left: 3px solid var(--medium); }
+        .stat-card.low { border-left: 3px solid var(--low); }
+        .stat-card.kev { border-left: 3px solid var(--kev); }
+        .stat-card.exploited { border-left: 3px solid var(--exploited); }
+        .stat-card.internet { border-left: 3px solid var(--internet); }
 
         .stat-value {
-            font-size: 32px;
+            font-size: 28px;
             font-weight: 700;
-            margin-bottom: 5px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            margin-bottom: 4px;
+            color: var(--text-primary);
         }
 
         .stat-label {
-            font-size: 13px;
-            color: #7f8c8d;
+            font-size: 11px;
+            color: var(--text-secondary);
             font-weight: 600;
             text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
 
         .stat-sublabel {
             font-size: 11px;
-            color: #95a5a6;
-            margin-top: 3px;
+            color: var(--text-muted);
+            margin-top: 2px;
         }
 
         .view-toggle {
             display: inline-flex;
-            background: #ecf0f1;
-            padding: 4px;
-            border-radius: 25px;
-            gap: 5px;
+            background: var(--bg-surface-alt);
+            padding: 3px;
+            border-radius: var(--radius);
+            gap: 2px;
+            border: 1px solid var(--border-color);
         }
 
         .view-btn {
-            padding: 10px 20px;
+            padding: 7px 16px;
             border: none;
             background: transparent;
-            color: #7f8c8d;
+            color: var(--text-secondary);
             cursor: pointer;
-            border-radius: 20px;
-            transition: all 0.3s;
+            border-radius: 6px;
+            transition: all 0.2s;
             font-weight: 600;
+            font-size: 13px;
         }
 
         .view-btn.active {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: var(--accent);
             color: white;
         }
 
         .filter-controls {
             display: flex;
-            gap: 15px;
-            margin-bottom: 25px;
+            gap: 10px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
             align-items: center;
         }
 
         .filter-btn {
-            padding: 10px 20px;
-            border: 2px solid #e0e0e0;
-            background: white;
-            color: #7f8c8d;
+            padding: 6px 14px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-surface-alt);
+            color: var(--text-secondary);
             cursor: pointer;
-            border-radius: 20px;
-            transition: all 0.3s;
+            border-radius: var(--radius);
+            transition: all 0.2s;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 12px;
         }
 
         .filter-btn:hover {
-            border-color: #667eea;
-            color: #667eea;
+            border-color: var(--accent);
+            color: var(--accent);
         }
 
         .filter-btn.active {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: var(--accent);
             color: white;
-            border-color: transparent;
+            border-color: var(--accent);
         }
 
         .search-box {
             flex: 1;
             min-width: 200px;
             max-width: 400px;
-            padding: 10px 20px;
-            border: 2px solid #e0e0e0;
-            border-radius: 25px;
-            font-size: 14px;
-            transition: border-color 0.3s;
+            padding: 7px 14px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            font-size: 13px;
+            transition: border-color 0.2s;
+            background: var(--bg-surface-alt);
+            color: var(--text-primary);
         }
 
         .search-box:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--accent);
+        }
+
+        .search-box::placeholder {
+            color: var(--text-muted);
         }
 
         .table-container {
-            background: white;
-            border-radius: 15px;
+            background: var(--bg-surface-alt);
+            border-radius: var(--radius-lg);
             overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border: 1px solid var(--border-color);
         }
 
         .table-scroll {
@@ -441,85 +473,77 @@
         thead {
             position: sticky;
             top: 0;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: var(--bg-surface);
             z-index: 10;
         }
 
         th {
-            padding: 15px;
+            padding: 10px 14px;
             text-align: left;
             font-weight: 600;
-            color: white;
+            color: var(--text-secondary);
             cursor: pointer;
             user-select: none;
-            font-size: 14px;
+            font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-color);
         }
 
         th:hover {
-            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
         }
 
         td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #ecf0f1;
-            font-size: 14px;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        tbody tr:nth-child(even) {
+            background: rgba(255,255,255,0.02);
+        }
+
+        [data-theme="light"] tbody tr:nth-child(even) {
+            background: rgba(0,0,0,0.02);
         }
 
         tbody tr:hover {
-            background: #f8f9fa;
+            background: var(--bg-hover);
         }
 
         .risk-badge {
             display: inline-block;
-            padding: 5px 12px;
-            border-radius: 15px;
-            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .risk-critical {
-            background: #e74c3c;
+            letter-spacing: 0.3px;
             color: white;
         }
 
-        .risk-high {
-            background: #e67e22;
-            color: white;
-        }
-
-        .risk-medium {
-            background: #f39c12;
-            color: white;
-        }
-
-        .risk-low {
-            background: #3498db;
-            color: white;
-        }
-
-        .risk-minimal {
-            background: #95a5a6;
-            color: white;
-        }
+        .risk-critical { background: var(--critical); }
+        .risk-high { background: var(--high); }
+        .risk-medium { background: var(--medium); }
+        .risk-low { background: var(--low); }
+        .risk-minimal { background: var(--text-muted); }
 
         .cisa-kev {
-            background: #8b008b;
+            background: var(--kev);
             color: white;
-            padding: 3px 8px;
-            border-radius: 10px;
+            padding: 2px 6px;
+            border-radius: 8px;
             font-size: 10px;
             font-weight: 700;
         }
 
         .patch-badge {
-            background: linear-gradient(135deg, #11998e, #38ef7d);
+            background: var(--low);
             color: white;
-            padding: 3px 8px;
-            border-radius: 10px;
+            padding: 2px 6px;
+            border-radius: 8px;
             font-size: 10px;
             font-weight: 700;
             cursor: pointer;
@@ -532,7 +556,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.75);
             z-index: 1000;
             justify-content: center;
             align-items: center;
@@ -543,21 +567,22 @@
         }
 
         .modal-content {
-            background: white;
+            background: var(--bg-surface);
             width: 90%;
             max-width: 1100px;
             max-height: 85vh;
-            border-radius: 20px;
+            border-radius: var(--radius-lg);
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border: 1px solid var(--border-color);
         }
 
         .modal-header {
-            padding: 25px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
+            padding: 20px 24px;
+            background: var(--bg-surface-alt);
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -565,37 +590,43 @@
 
         .modal-header h2 {
             margin: 0;
-            font-size: 24px;
+            font-size: 18px;
         }
 
         .modal-close {
             background: none;
             border: none;
-            font-size: 30px;
+            font-size: 24px;
             cursor: pointer;
-            color: white;
+            color: var(--text-secondary);
             opacity: 0.8;
-            transition: opacity 0.3s;
+            transition: opacity 0.2s;
         }
 
         .modal-close:hover {
             opacity: 1;
+            color: var(--text-primary);
         }
 
         .modal-body {
-            padding: 25px;
+            padding: 24px;
             overflow-y: auto;
             flex: 1;
+        }
+
+        .modal-body h3 {
+            color: var(--text-primary);
         }
 
         .asset-info-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 25px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 15px;
+            gap: 16px;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--bg-surface-alt);
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
         }
 
         .info-item {
@@ -604,40 +635,40 @@
         }
 
         .info-label {
-            font-size: 12px;
-            color: #7f8c8d;
-            margin-bottom: 5px;
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
             font-weight: 600;
             text-transform: uppercase;
         }
 
         .info-value {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 700;
-            color: #2c3e50;
+            color: var(--text-primary);
         }
 
         .clickable {
             cursor: pointer;
-            color: #667eea;
+            color: var(--accent);
             text-decoration: none;
-            transition: color 0.3s;
+            transition: color 0.2s;
         }
 
         .clickable:hover {
-            color: #764ba2;
+            color: var(--accent-hover);
             text-decoration: underline;
         }
 
         #noData {
             text-align: center;
             padding: 60px;
-            color: #7f8c8d;
+            color: var(--text-muted);
         }
 
         #noData h2 {
-            color: #95a5a6;
-            margin-bottom: 15px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
         }
 
         #dashboardContent {
@@ -645,36 +676,39 @@
         }
 
         .export-btn {
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: var(--accent);
             color: white;
             border: none;
-            padding: 10px 25px;
-            border-radius: 25px;
+            padding: 7px 18px;
+            border-radius: var(--radius);
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
-            transition: transform 0.3s, box-shadow 0.3s;
+            transition: background 0.2s;
         }
 
         .export-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            background: var(--accent-hover);
         }
 
         .action-bar {
             display: flex;
             align-items: center;
-            gap: 20px;
-            margin-bottom: 25px;
+            gap: 16px;
+            margin-bottom: 20px;
         }
 
-        
-
-        
-
-        
-
-        
+        /* Scrollbar styling for dark mode */
+        .table-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        .table-scroll::-webkit-scrollbar-track {
+            background: var(--bg-surface-alt);
+        }
+        .table-scroll::-webkit-scrollbar-thumb {
+            background: var(--text-muted);
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -685,7 +719,7 @@
             <div class="progress-bar-container">
                 <div class="progress-bar" id="progressBar" style="width: 0%">0%</div>
             </div>
-            <p id="loadingSubtext" style="color: #7f8c8d; margin-top: 10px;">Initializing...</p>
+            <p id="loadingSubtext" style="color: var(--text-muted); margin-top: 10px;">Initializing...</p>
         </div>
     </div>
 
@@ -697,6 +731,7 @@
             </div>
             <div class="header-stats">
                 <div class="last-updated" id="lastUpdated"></div>
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">Light Mode</button>
             </div>
         </div>
 
@@ -706,7 +741,7 @@
                 <span class="collapse-icon" id="collapseIcon">▼</span>
             </div>
             <div class="upload-content" id="uploadContent">
-                <p style="margin-bottom: 20px; color: #7f8c8d;">
+                <p style="margin-bottom: 16px; color: var(--text-secondary);">
                     Upload the prioritized JSON file generated by the vulnerability prioritizer
                 </p>
                 <div class="file-input-container">
@@ -714,7 +749,7 @@
                         Load Vulnerability Data
                     </label>
                     <input type="file" id="fileInput" class="file-input" accept=".json">
-                    <span id="fileName" style="color: #7f8c8d;">No file selected</span>
+                    <span id="fileName" style="color: var(--text-muted);">No file selected</span>
                 </div>
             </div>
         </div>
@@ -782,7 +817,7 @@
             <div class="modal-body">
                 <div class="asset-info-grid" id="modalAssetInfo"></div>
                 <div id="assetPatchInfo"></div>
-                <h3 style="margin-bottom: 15px; color: #2c3e50;">Vulnerabilities</h3>
+                <h3 style="margin-bottom: 12px;">Vulnerabilities</h3>
                 <div class="table-container">
                     <div class="table-scroll" style="max-height: 400px;">
                         <table>
@@ -794,7 +829,7 @@
                                     <th>CVSS</th>
                                     <th>EPSS</th>
                                     <th>CISA KEV</th>
-                                    
+
                                 </tr>
                             </thead>
                             <tbody id="modalVulnerabilitiesTable"></tbody>
@@ -806,6 +841,37 @@
     </div>
 
     <script>
+        // Theme toggle with localStorage persistence
+        function initTheme() {
+            const saved = localStorage.getItem('vuln-dashboard-theme');
+            const theme = saved || 'dark';
+            document.documentElement.setAttribute('data-theme', theme);
+            updateThemeButton(theme);
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('vuln-dashboard-theme', next);
+            updateThemeButton(next);
+            // Re-render charts with updated colors
+            if (charts.risk || charts.asset) {
+                renderCharts();
+            }
+        }
+
+        function updateThemeButton(theme) {
+            const btn = document.getElementById('themeToggle');
+            btn.textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+        }
+
+        function getChartTextColor() {
+            return document.documentElement.getAttribute('data-theme') === 'dark' ? '#8b949e' : '#5a6270';
+        }
+
+        initTheme();
+
         let vulnerabilities = [];
         let assetData = {};
         let currentAssetSort = { column: 1, ascending: false };
@@ -845,13 +911,13 @@
 
             document.getElementById('fileName').textContent = file.name;
             document.getElementById('lastUpdated').textContent = `Updated: ${new Date().toLocaleString()}`;
-            
+
             showLoading();
             updateProgress(5, 'Reading file: ' + file.name);
 
             setTimeout(() => {
                 const reader = new FileReader();
-                
+
                 reader.onload = function(event) {
                     setTimeout(() => {
                         processFile(event.target.result);
@@ -869,11 +935,11 @@
 
         function processFile(fileContent) {
             updateProgress(15, 'Parsing JSON data...');
-            
+
             setTimeout(() => {
                 try {
                     const data = JSON.parse(fileContent);
-                    
+
                     if (Array.isArray(data)) {
                         vulnerabilities = data;
                     } else if (data.vulnerabilities) {
@@ -881,13 +947,13 @@
                     } else {
                         throw new Error('Invalid JSON format');
                     }
-                    
+
                     updateProgress(30, 'Found ' + vulnerabilities.length + ' vulnerabilities');
-                    
+
                     setTimeout(() => {
                         processDataInChunks();
                     }, 100);
-                    
+
                 } catch (error) {
                     hideLoading();
                     alert('Error parsing JSON: ' + error.message);
@@ -899,14 +965,14 @@
             assetData = {};
             const chunkSize = 500;
             let currentIndex = 0;
-            
+
             function processNextChunk() {
                 const endIndex = Math.min(currentIndex + chunkSize, vulnerabilities.length);
-                
+
                 for (let i = currentIndex; i < endIndex; i++) {
                     const vuln = vulnerabilities[i];
                     const affectedAssets = vuln.affected_assets || [];
-                    
+
                     affectedAssets.forEach(asset => {
                         if (!assetData[asset]) {
                             assetData[asset] = {
@@ -922,7 +988,7 @@
                                 exploitedCount: 0
                             };
                         }
-                        
+
                         assetData[asset].vulnerabilities.push({
                             cve_id: vuln.cve_id,
                             risk_score: vuln.risk_score,
@@ -936,35 +1002,35 @@
 
                         assetData[asset].totalRiskScore += vuln.risk_score;
                         assetData[asset].maxRiskScore = Math.max(assetData[asset].maxRiskScore, vuln.risk_score);
-                        
+
                         if (vuln.in_cisa_kev) assetData[asset].kevCount++;
                         if (vuln.actively_exploited) assetData[asset].exploitedCount++;
                     });
                 }
-                
+
                 const progress = 30 + ((endIndex / vulnerabilities.length) * 40);
                 updateProgress(progress, 'Processing vulnerabilities: ' + endIndex + ' of ' + vulnerabilities.length);
-                
+
                 currentIndex = endIndex;
-                
+
                 if (currentIndex < vulnerabilities.length) {
                     setTimeout(processNextChunk, 10);
                 } else {
                     setTimeout(finalizeProcessing, 100);
                 }
             }
-            
+
             processNextChunk();
         }
 
         function finalizeProcessing() {
             updateProgress(75, 'Calculating risk levels...');
-            
+
             setTimeout(() => {
                 Object.keys(assetData).forEach(assetName => {
                     const asset = assetData[assetName];
                     asset.avgRiskScore = asset.totalRiskScore / asset.vulnerabilities.length;
-                    
+
                     if (asset.maxRiskScore >= 80) {
                         asset.riskLevel = 'CRITICAL';
                     } else if (asset.maxRiskScore >= 60) {
@@ -977,7 +1043,7 @@
                         asset.riskLevel = 'MINIMAL';
                     }
                 });
-                
+
                 setTimeout(() => {
                     renderDashboard();
                 }, 100);
@@ -986,18 +1052,18 @@
 
         function renderDashboard() {
             updateProgress(85, 'Rendering dashboard...');
-            
+
             setTimeout(() => {
                 document.getElementById('dashboardContent').style.display = 'block';
                 document.getElementById('noData').style.display = 'none';
-                
+
                 displayStats();
-                
+
                 // Ensure charts are rendered after DOM is ready
                 setTimeout(() => {
                     renderCharts();
                 }, 100);
-                
+
                 setTimeout(() => {
                     renderAssetsTable();
                 }, 150);
@@ -1006,7 +1072,7 @@
 
         function displayStats() {
             updateStatsDisplay();
-            
+
             setTimeout(() => {
                 updateProgress(100, 'Complete!');
                 setTimeout(hideLoading, 500);
@@ -1015,7 +1081,7 @@
 
         function updateStatsDisplay() {
             const statsGrid = document.getElementById('statsGrid');
-            
+
             // Calculate CVE risk counts
             const cveRiskCounts = {
                 CRITICAL: 0,
@@ -1049,9 +1115,9 @@
             const cisaKevCount = vulnerabilities.filter(v => v.in_cisa_kev).length;
             const exploitedCount = vulnerabilities.filter(v => v.actively_exploited || v.exploit_available).length;
             const avgRiskScore = vulnerabilities.reduce((sum, v) => sum + v.risk_score, 0) / vulnerabilities.length;
-            
+
             // Count internet-facing critical assets
-            const internetCritical = Object.values(assetData).filter(a => 
+            const internetCritical = Object.values(assetData).filter(a =>
                 a.exposure === 'INTERNET' && a.criticality === 'CRITICAL'
             ).length;
 
@@ -1109,13 +1175,15 @@
                 charts.asset.destroy();
                 charts.asset = null;
             }
-            
+
+            const textColor = getChartTextColor();
+
             // Small delay to ensure proper cleanup
             setTimeout(() => {
                 // Risk Distribution Chart
                 const riskCanvas = document.getElementById('riskChart');
                 if (!riskCanvas) return;
-                
+
                 const riskCtx = riskCanvas.getContext('2d');
                 const riskCounts = {};
                 vulnerabilities.forEach(v => {
@@ -1135,11 +1203,11 @@
                                 riskCounts.MINIMAL || 0
                             ],
                             backgroundColor: [
-                                '#e74c3c',
-                                '#e67e22',
-                                '#f39c12',
-                                '#3498db',
-                                '#95a5a6'
+                                '#ef4444',
+                                '#f97316',
+                                '#f59e0b',
+                                '#22c55e',
+                                '#64748b'
                             ]
                         }]
                     },
@@ -1152,6 +1220,7 @@
                                 position: 'bottom',
                                 labels: {
                                     padding: 10,
+                                    color: textColor,
                                     font: {
                                         size: 11
                                     }
@@ -1164,7 +1233,7 @@
                 // Top Assets Chart
                 const assetCanvas = document.getElementById('assetChart');
                 if (!assetCanvas) return;
-                
+
                 const assetCtx = assetCanvas.getContext('2d');
                 const topAssets = Object.values(assetData)
                     .sort((a, b) => b.maxRiskScore - a.maxRiskScore)
@@ -1177,8 +1246,8 @@
                         datasets: [{
                             label: 'Max Risk Score',
                             data: topAssets.map(a => a.maxRiskScore),
-                            backgroundColor: 'rgba(102, 126, 234, 0.8)',
-                            borderColor: 'rgba(102, 126, 234, 1)',
+                            backgroundColor: 'rgba(0, 180, 216, 0.7)',
+                            borderColor: 'rgba(0, 180, 216, 1)',
                             borderWidth: 1
                         }]
                     },
@@ -1196,18 +1265,26 @@
                                 beginAtZero: true,
                                 max: 100,
                                 ticks: {
+                                    color: textColor,
                                     font: {
                                         size: 11
                                     }
+                                },
+                                grid: {
+                                    color: 'rgba(255,255,255,0.05)'
                                 }
                             },
                             x: {
                                 ticks: {
+                                    color: textColor,
                                     font: {
                                         size: 10
                                     },
                                     maxRotation: 45,
                                     minRotation: 45
+                                },
+                                grid: {
+                                    display: false
                                 }
                             }
                         }
@@ -1220,20 +1297,20 @@
             currentView = view;
             currentFilter = null;
             currentSpecialFilter = null;
-            
+
             document.querySelectorAll('.view-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             event.target.classList.add('active');
-            
+
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
             document.querySelectorAll('.filter-btn')[0].classList.add('active');
-            
+
             // Update the stats display to show the correct counts
             updateStatsDisplay();
-            
+
             if (view === 'assets') {
                 renderAssetsTable();
             } else if (view === 'vulnerabilities') {
@@ -1255,13 +1332,13 @@
                     <th onclick="sortAssetTable(7)">Patchable ↕</th>
                 </tr>
             `;
-            
+
             let assetsArray = Object.values(assetData);
-            
+
             if (currentFilter) {
                 assetsArray = assetsArray.filter(asset => asset.riskLevel === currentFilter);
             }
-            
+
             if (currentSpecialFilter === 'kev') {
                 assetsArray = assetsArray.filter(asset => asset.kevCount > 0);
             } else if (currentSpecialFilter === 'exploited') {
@@ -1269,7 +1346,7 @@
             } else if (currentSpecialFilter === 'internet') {
                 assetsArray = assetsArray.filter(asset => asset.exposure === 'INTERNET');
             }
-            
+
             assetsArray.sort((a, b) => {
                 let aVal, bVal;
                 switch(currentAssetSort.column) {
@@ -1280,16 +1357,16 @@
                     case 4: aVal = a.exposure; bVal = b.exposure; break;
                     case 5: aVal = a.vulnerabilities.length; bVal = b.vulnerabilities.length; break;
                     case 6: aVal = a.kevCount; bVal = b.kevCount; break;
-                    
+
                 }
-                
+
                 if (currentAssetSort.ascending) {
                     return aVal > bVal ? 1 : -1;
                 } else {
                     return aVal < bVal ? 1 : -1;
                 }
             });
-            
+
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = assetsArray.map(asset => `
                 <tr>
@@ -1300,7 +1377,7 @@
                     <td>${asset.exposure || 'N/A'}</td>
                     <td>${asset.vulnerabilities.length}</td>
                     <td>${asset.kevCount > 0 ? '<span class="cisa-kev">' + asset.kevCount + '</span>' : '0'}</td>
-                    
+
                 </tr>
             `).join('');
         }
@@ -1319,13 +1396,13 @@
                     <th onclick="sortCVETable(7)">Assets ↕</th>
                 </tr>
             `;
-            
+
             let vulnsArray = [...vulnerabilities];
-            
+
             if (currentFilter) {
                 vulnsArray = vulnsArray.filter(vuln => vuln.risk_level === currentFilter);
             }
-            
+
             if (currentSpecialFilter === 'kev') {
                 vulnsArray = vulnsArray.filter(vuln => vuln.in_cisa_kev);
             } else if (currentSpecialFilter === 'exploited') {
@@ -1333,7 +1410,7 @@
             } else if (currentSpecialFilter === 'internet') {
                 vulnsArray = vulnsArray.filter(vuln => vuln.exposure_level === 'INTERNET');
             }
-            
+
             vulnsArray.sort((a, b) => {
                 let aVal, bVal;
                 switch(currentCVESort.column) {
@@ -1353,7 +1430,7 @@
                     return aVal < bVal ? 1 : -1;
                 }
             });
-            
+
             const tbody = document.getElementById('tableBody');
             tbody.innerHTML = vulnsArray.map(vuln => {
                 const businessUnit = vuln.business_unit || '-';
@@ -1374,7 +1451,7 @@
             }).join('');
         }
 
-        
+
 
         function getRiskLevelValue(level) {
             const values = { CRITICAL: 5, HIGH: 4, MEDIUM: 3, LOW: 2, MINIMAL: 1 };
@@ -1401,20 +1478,20 @@
             renderCVETable();
         }
 
-        
+
 
         function filterByRisk(riskLevel) {
             currentFilter = riskLevel;
             currentSpecialFilter = null;
-            
+
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            
+
             if (event && event.target) {
                 event.target.classList.add('active');
             }
-            
+
             if (currentView === 'assets') {
                 renderAssetsTable();
             } else if (currentView === 'vulnerabilities') {
@@ -1425,15 +1502,15 @@
         function filterBySpecial(filterType) {
             currentSpecialFilter = filterType;
             currentFilter = null;
-            
+
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            
+
             if (event && event.target) {
                 event.target.classList.add('active');
             }
-            
+
             if (currentView === 'assets') {
                 renderAssetsTable();
             } else if (currentView === 'vulnerabilities') {
@@ -1444,7 +1521,7 @@
         function searchTable(query) {
             const rows = document.getElementById('tableBody').getElementsByTagName('tr');
             const searchTerm = query.toLowerCase();
-            
+
             for (let row of rows) {
                 const text = row.textContent.toLowerCase();
                 row.style.display = text.includes(searchTerm) ? '' : 'none';
@@ -1454,9 +1531,9 @@
         function showAssetDetails(assetName) {
             const asset = assetData[assetName];
             if (!asset) return;
-            
+
             document.getElementById('modalAssetName').textContent = assetName;
-            
+
             const infoHtml = `
                 <div class="info-item">
                     <span class="info-label">Risk Level</span>
@@ -1491,15 +1568,15 @@
                     <span class="info-value">${asset.kevCount}</span>
                 </div>
             `;
-            
+
             document.getElementById('modalAssetInfo').innerHTML = infoHtml;
-            
+
             document.getElementById('assetPatchInfo').innerHTML = '';
-            
+
             const vulnTableHtml = asset.vulnerabilities
                 .sort((a, b) => b.risk_score - a.risk_score)
                 .map(vuln => {
-                    
+
                     return `
                         <tr>
                             <td><a href="https://nvd.nist.gov/vuln/detail/${vuln.cve_id}" target="_blank" class="clickable">${vuln.cve_id}</a></td>
@@ -1508,11 +1585,11 @@
                             <td>${vuln.cvss_score.toFixed(1)}</td>
                             <td>${vuln.epss_score ? (vuln.epss_score * 100).toFixed(1) + '%' : 'N/A'}</td>
                             <td>${vuln.in_cisa_kev ? '<span class="cisa-kev">YES</span>' : '-'}</td>
-                            
+
                         </tr>
                     `;
                 }).join('');
-            
+
             document.getElementById('modalVulnerabilitiesTable').innerHTML = vulnTableHtml;
             document.getElementById('assetModal').classList.add('active');
         }
@@ -1524,14 +1601,14 @@
         function exportCurrentView() {
             let csvContent = '';
             let filename = '';
-            
+
             if (currentView === 'assets') {
                 csvContent = 'Asset Name,Max Risk Score,Avg Risk Score,Risk Level,Criticality,Exposure,Sensitivity,CVE Count,CISA KEV\n';
-                
+
                 Object.values(assetData).forEach(asset => {
                     csvContent += `"${asset.name}",${asset.maxRiskScore.toFixed(1)},${asset.avgRiskScore.toFixed(1)},${asset.riskLevel},${asset.criticality || 'N/A'},${asset.exposure || 'N/A'},${asset.sensitivity || 'N/A'},${asset.vulnerabilities.length},${asset.kevCount}\n`;
                 });
-                
+
                 filename = 'asset_risk_report.csv';
             } else if (currentView === 'vulnerabilities') {
                 csvContent = 'CVE ID,Risk Score,Risk Level,CVSS,EPSS,CISA KEV,Business Unit,Asset Tags,Asset Count,Description\n';
@@ -1545,7 +1622,7 @@
                 filename = 'vulnerability_report.csv';
 
             }
-            
+
             const blob = new Blob([csvContent], { type: 'text/csv' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
